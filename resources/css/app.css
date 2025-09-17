@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* DaisyUI theme configuration */
+@layer base {
+    :root {
+        --theme: "light";
+        --color-primary: oklch(0.6569 0.196 275.75);
+        --color-secondary: oklch(0.7176 0.158 342.55);
+        --color-accent: oklch(0.7059 0.169 183.61);
+        --color-neutral: oklch(0.7059 0.169 183.61);
+        --color-base-100: oklch(1 0 0);
+        --color-info: oklch(0.7059 0.169 183.61);
+        --color-success: oklch(0.7176 0.158 142.55);
+        --color-warning: oklch(0.8471 0.199 83.87);
+        --color-error: oklch(0.7176 0.158 342.55);
+    }
+
+    [data-theme="dark"] {
+        --theme: "dark";
+        --color-base-100: oklch(0.2 0 0);
+    }
+}
+
+/* Add your custom styles below */
