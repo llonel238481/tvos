@@ -1,6 +1,6 @@
 <x-laravel-daisyui-starter::layout>
     <x-slot name="header">
-        Welcome to Travel Order Management System
+        Welcome 
     </x-slot>
 
     <div class="hero min-h-screen bg-base-200">

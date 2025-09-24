@@ -11,32 +11,32 @@
 
         <!-- Search and Filter Section -->
         <div class="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3">
-            <!-- Search -->
-            <form action="{{ route('getEmployees') }}" method="GET" class="flex gap-2 flex-wrap">
+            
+           <form action="{{ route('getEmployees') }}" method="GET" class="flex gap-2 flex-wrap">
+                <!-- Search -->
                 <div class="form-control w-full sm:w-1/2">
                     <input type="text" 
-                           name="search" 
-                           value="{{ request('search') }}" 
-                           placeholder="Search by name..." 
-                           class="input input-bordered w-full" />
+                        name="search" 
+                        value="{{ request('search') }}" 
+                        placeholder="Search by name..." 
+                        class="input input-bordered w-full" />
                 </div>
-                <button type="submit" class="btn btn-primary">Search</button>
+
+                <!-- Filter -->
+                <div class="form-control w-full sm:w-1/5">
+                    <select name="classification" class="select select-bordered w-full" onchange="this.form.submit()">
+                        <option value="All">All</option>
+                        <option value="Admin" {{ request('classification') == 'Admin' ? 'selected' : '' }}>Admin</option>
+                        <option value="Employee" {{ request('classification') == 'Employee' ? 'selected' : '' }}>Employee</option>
+                        <option value="CEO" {{ request('classification') == 'CEO' ? 'selected' : '' }}>CEO</option>
+                        <option value="Supervisor" {{ request('classification') == 'Supervisor' ? 'selected' : '' }}>Supervisor</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-success">Search</button>
             </form>
-
-            <!-- Filter by Department (dummy) -->
-            <div class="form-control w-full sm:w-1/5">
-                <select class="select select-bordered w-full">
-                    <option disabled selected>Filter by Department</option>
-                    <option>All</option>
-                    <option>IT</option>
-                    <option>HR</option>
-                    <option>Finance</option>
-                    <option>Operations</option>
-                </select>
-            </div>
-
             <!-- Add Employee Button -->
-            <label for="add-employee-modal" class="btn btn-primary w-full sm:w-auto">+ Add Employee</label>
+            <label for="add-employee-modal" class="btn btn-success w-full sm:w-auto">+ Add Employee</label>
         </div>
 
         <!-- Employees Table -->
@@ -52,8 +52,10 @@
                         <th>Firstname</th>
                         <th>Middlename</th>
                         <th>Lastname</th>
+                        <th>Sex</th>
+                        <th>Department</th>
                         <th>Extensionname</th>
-                        <th>Classification</th>
+                        
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -65,8 +67,10 @@
                             <td>{{ $employee->firstname }}</td>
                             <td>{{ $employee->middlename }}</td>
                             <td>{{ $employee->lastname }}</td>
+                            <td>{{ $employee->sex }}</td>
+                            <td>{{ $employee->department->departmentname ?? 'No Department' }}</td>
                             <td>{{ $employee->extensionname }}</td>
-                            <td>{{ $employee->classification }}</td>
+                            
                             <td class="flex gap-2">
                                 <!-- Edit Button -->
                                 <label for="edit-employee-{{ $employee->id }}" class="btn btn-sm btn-outline">Edit</label>
@@ -99,24 +103,34 @@
                 <input type="text" name="lastname" value="{{ $employee->lastname }}" class="input input-bordered w-full" required />
             </div>
             <div class="form-control mb-3">
+                <label class="label">Sex</label>
+                <select name="sex" class="select select-bordered w-full" required>
+                    <option value="Male" {{ $employee->sex == 'Male' ? 'selected' : '' }}>Male</option>
+                    <option value="Female" {{ $employee->sex == 'Female' ? 'selected' : '' }}>Female</option>
+                </select>
+            </div>
+            <div class="form-control mb-3">
+                <label class="label">Department</label>
+                <select name="department_id" class="select select-bordered w-full" required>
+                    @foreach($departments as $department)
+                        <option value="{{ $department->id }}" 
+                            {{ $employee->department_id == $department->id ? 'selected' : '' }}>
+                            {{ $department->departmentname }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-control mb-3">
                 <label class="label">Extensionname</label>
                 <input type="text" name="extensionname" value="{{ $employee->extensionname }}" class="input input-bordered w-full" />
             </div>
-            <div class="form-control mb-3">
-                <label class="label">Classification</label>
-                <select name="classification" class="select select-bordered w-full" required>
-                    <option value="Admin" {{ $employee->classification == 'Admin' ? 'selected' : '' }}>Admin</option>
-                    <option value="Employee" {{ $employee->classification == 'Employee' ? 'selected' : '' }}>Employee</option>
-                    <option value="CEO" {{ $employee->classification == 'CEO' ? 'selected' : '' }}>CEO</option>
-                    <option value="Supervisor" {{ $employee->classification == 'Supervisor' ? 'selected' : '' }}>Supervisor</option>
-                </select>
-            </div>
+        
 
             <div class="modal-action">
                 <!-- Cancel just closes the modal -->
                 <label for="edit-employee-{{ $employee->id }}" class="btn">Cancel</label>
                 <!-- Submit works as normal -->
-                <button type="submit" class="btn btn-primary">Update</button>
+                <button type="submit" class="btn btn-success">Update</button>
             </div>
         </form>
     </div>
@@ -124,19 +138,20 @@
 
 
                         <!-- Delete Modal -->
+                        
                             <input type="checkbox" id="delete-employee-{{ $employee->id }}" class="modal-toggle" />
                             <div class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Delete Employee</h3>
-        <p>Are you sure you want to delete <b>{{ $employee->firstname }} {{ $employee->lastname }}</b>?</p>
-        <div class="modal-action">
-            <label for="delete-employee-{{ $employee->id }}" class="btn">Cancel</label>
-            <form action="{{ route('employee.destroy', $employee->id) }}" method="POST" 
-                  onsubmit="closeModal('delete-employee-{{ $employee->id }}')">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-error">Delete</button>
-            </form>
+                            <div class="modal-box">
+                                <h3 class="font-bold text-lg mb-4">Delete Employee</h3>
+                                <p>Are you sure you want to delete <b>{{ $employee->firstname }} {{ $employee->lastname }}</b>?</p>
+                                <div class="modal-action">
+                                    <label for="delete-employee-{{ $employee->id }}" class="btn">Cancel</label>
+                                    <form action="{{ route('employee.destroy', $employee->id) }}" method="POST" 
+                                        onsubmit="closeModal('delete-employee-{{ $employee->id }}')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-error">Delete</button>
+                                    </form>
         </div>
     </div>
 </div>
@@ -170,23 +185,31 @@
                         <input type="text" name="lastname" class="input input-bordered w-full" required />
                     </div>
                     <div class="form-control mb-3">
+                        <label class="label">Sex</label>
+                        <select name="sex" class="select select-bordered w-full" required>
+                            <option disabled selected>Choose Sex</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-control mb-3">
+                        <label class="label">Department</label>
+                        <select name="department_id" class="select select-bordered w-full" required>
+                            <option disabled selected>Choose department</option>
+                            @foreach($departments as $department)
+                                <option value="{{ $department->id }}">{{ $department->departmentname }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-control mb-3">
                         <label class="label">Extensionname</label>
                         <input type="text" name="extensionname" class="input input-bordered w-full" />
                     </div>
-                    <div class="form-control mb-3">
-                        <label class="label">Classification</label>
-                        <select name="classification" class="select select-bordered w-full" required>
-                            <option disabled selected>Choose classification</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Employee">Employee</option>
-                            <option value="CEO">CEO</option>
-                            <option value="Supervisor">Supervisor</option>
-                        </select>
-                    </div>
+                   
 
                     <div class="modal-action">
                         <label for="add-employee-modal" class="btn">Cancel</label>
-                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="submit" class="btn btn-success">Save</button>
                     </div>
                 </form>
             </div>

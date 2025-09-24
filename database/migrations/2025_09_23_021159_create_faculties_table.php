@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('facultyname');
             $table->string('email')->unique();
-            $table->enum('department', ['CICS','CIT','CTED']);
             $table->string('contact');
             $table->timestamps();
         });

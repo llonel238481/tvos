@@ -11,30 +11,30 @@
 
         <!-- Search and Filter Section -->
         <div class="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3">
-            <form action="{{ route('users.index') }}" method="GET" class="flex gap-2 flex-wrap">
-                <div class="form-control w-full sm:w-1/2">
-                    <input type="text" 
-                           name="search" 
-                           value="{{ request('search') }}" 
-                           placeholder="Search faculty..." 
-                           class="input input-bordered w-full" />
-                </div>
-                <button type="submit" class="btn btn-primary">Search</button>
-            </form>
+        <form action="{{ route('users.index') }}" method="GET" class="flex gap-2 flex-wrap">
+            <div class="form-control w-full sm:w-1/2">
+                <input type="text" 
+                    name="search" 
+                    value="{{ request('search') }}" 
+                    placeholder="Search name or email..." 
+                    class="input input-bordered w-full" />
+            </div>
 
             <div class="form-control w-full sm:w-1/4">
-                <select class="select select-bordered w-full">
-                    <option disabled selected>Filter by Role</option>
-                    <option>All</option>
-                    <option>Employee</option>
-                    <option>Admin</option>
-                    <option>CEO</option>
-                    <option>Supervisor</option>
+                <select name="role" class="select select-bordered w-full">
+                    <option value="All" {{ request('role') == 'All' ? 'selected' : '' }}>All</option>
+                    <option value="Employee" {{ request('role') == 'Employee' ? 'selected' : '' }}>Employee</option>
+                    <option value="Admin" {{ request('role') == 'Admin' ? 'selected' : '' }}>Admin</option>
+                    <option value="CEO" {{ request('role') == 'CEO' ? 'selected' : '' }}>CEO</option>
+                    <option value="Supervisor" {{ request('role') == 'Supervisor' ? 'selected' : '' }}>Supervisor</option>
                 </select>
             </div>
 
+            <button type="submit" class="btn btn-success">Search</button>
+        </form>
+
             <!-- Add User Button -->
-            <label for="add-user-modal" class="btn btn-primary w-full sm:w-auto">+ Add User</label>
+            <label for="add-user-modal" class="btn btn-success w-full sm:w-auto">+ Add User</label>
         </div>
 
         <!-- Users Table -->
@@ -115,7 +115,7 @@
                                     </div>
                                     <div class="modal-action">
                                         <label for="edit-user-{{ $user->id }}" class="btn">Cancel</label>
-                                        <button type="submit" class="btn btn-primary">Update</button>
+                                        <button type="submit" class="btn btn-success">Update</button>
                                     </div>
                                 </form>
                             </div>
@@ -192,7 +192,7 @@
                     </div>
                     <div class="modal-action">
                         <label for="add-user-modal" class="btn">Cancel</label>
-                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="submit" class="btn btn-success">Save</button>
                     </div>
                 </form>
             </div>

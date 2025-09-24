@@ -2,17 +2,42 @@
 
 namespace App\Http\Controllers;
 use App\Models\Travel_Lists;
+Use App\Models\Transportation;
+use App\Models\Faculty;
 use Illuminate\Http\Request;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\IOFactory;
 
 class TravelListController extends Controller
 {
-    public function index()
-    {
-        $travel_lists = Travel_Lists::all();
-        return view('travellist.travellist', compact('travel_lists'));
+    public function index(Request $request)
+{
+    $query = Travel_Lists::with('transportation');
+
+    // 🔍 Search by request or purpose
+    if ($request->filled('search')) {
+        $search = $request->input('search');
+        $query->where(function ($q) use ($search) {
+            $q->where('request', 'like', "%{$search}%")
+              ->orWhere('purpose', 'like', "%{$search}%");
+        });
     }
+
+    // 🎯 Filter by status
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    $travel_lists = $query->get();
+    $totalTravelOrders = Travel_Lists::count();
+    $transportations = Transportation::all();
+    $faculties = Faculty::all();
+
+    // ✅ Pass $transportations to view
+    return view('travellist.travellist', compact('travel_lists', 'transportations', 'totalTravelOrders', 'faculties'));
+}
+
+
 
     public function show($id)
     {
@@ -32,7 +57,9 @@ class TravelListController extends Controller
             'request' => 'required|string|max:255',
             'purpose' => 'required|string|max:255',
             'destination' => 'required|string|max:255',
-            'means' => 'required|string|max:255',
+            'conditionalities' => 'required|in:On Official Business,On Official Time,On Official Business and Time',
+            'transportation_id' => 'required|exists:transportations,id',
+            'faculty_id' => 'required|exists:faculties,id',
             
         ]);
 
@@ -53,7 +80,9 @@ class TravelListController extends Controller
             'request'     => 'required|string|max:255',
             'purpose'     => 'required|string|max:255',
             'destination' => 'required|string|max:255',
-            'means'       => 'required|string|max:255',
+            'conditionalities' => 'required|in:On Official Business,On Official Time,On Official Business and Time',
+            'transportation_id' => 'required|exists:transportations,id',
+            'faculty_id' => 'required|exists:faculties,id',
             'status'      => 'required|string|max:50',
         ]);
 
@@ -118,8 +147,12 @@ class TravelListController extends Controller
     $table->addCell(6000)->addText($travel->destination);
 
     $table->addRow();
+    $table->addCell(3000)->addText('Conditionalities');
+    $table->addCell(6000)->addText($travel->conditionalities);
+
+    $table->addRow();
     $table->addCell(3000)->addText('Means');
-    $table->addCell(6000)->addText($travel->means);
+    $table->addCell(6000)->addText($travel->transportation->transportvehicle ?? 'N/A');
 
     // Output file
     $fileName = 'TravelOrder_' . $travel->id . '.docx';

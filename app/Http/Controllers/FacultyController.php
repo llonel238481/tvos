@@ -7,11 +7,24 @@ use Illuminate\Http\Request;
 
 class FacultyController extends Controller
 {
-    public function index()
-    {
-        $faculties = Faculty::all();
-        return view('faculty.faculty', compact('faculties'));
+    public function index(Request $request)
+{
+    $query = Faculty::query();
+
+    if ($request->filled('search')) {
+        $search = $request->input('search');
+        $query->where(function ($q) use ($search) {
+            $q->where('facultyname', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%");
+        });
     }
+
+
+    $faculties = $query->get();
+
+    return view('faculty.faculty', compact('faculties'));
+}
+
 
     public function show($id)
     {
@@ -29,7 +42,6 @@ class FacultyController extends Controller
         $validated = $request->validate([
             'facultyname' => 'required|string|max:255',
             'email'       => 'required|email|max:255',
-            'department'  => 'required|in:CICS,CIT,CTED',
             'contact'     => 'required|string|max:11',
         ]);
 
@@ -48,7 +60,6 @@ class FacultyController extends Controller
         $validated = $request->validate([
             'facultyname' => 'required|string|max:255',
             'email'       => 'required|email|max:255',
-            'department'  => 'required|in:CICS,CIT,CTED',
             'contact'     => 'required|string|max:11',
         ]);
 

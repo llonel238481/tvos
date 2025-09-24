@@ -9,7 +9,11 @@ class Faculty extends Model
     protected $fillable = [
     'facultyname',
     'email',
-    'department',
     'contact',
-];
+    ];
+
+    public function travelLists()
+    {
+        return $this->hasMany(Travel_Lists::class, 'faculty_id');
+    }
 }

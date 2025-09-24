@@ -17,7 +17,18 @@ return new class extends Migration
             $table->string('request');       // requesting party
             $table->string('purpose');
             $table->string('destination');
-            $table->string('means');         // means of transportation
+            $table->enum('conditionalities', ['On Official Business','On Official Time','On Official Business and Time']); // ✅ added conditionalities column
+
+            // Transportation - Foreign Keys
+            $table->foreignId('transportation_id')
+              ->constrained('transportations')
+              ->onDelete('cascade');
+
+            // Faculty - Foreign Keys
+            $table->foreignId('faculty_id')
+              ->constrained('faculties')
+              ->onDelete('cascade');
+              
             $table->string('status')->default('Pending'); // ✅ added status column
             $table->timestamps();
         });

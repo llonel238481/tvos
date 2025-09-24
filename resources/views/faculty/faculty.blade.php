@@ -12,32 +12,20 @@
         <!-- Search and Filter Section -->
         <div class="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3">
             <!-- Search -->
-            <form action="{{ route('faculties.index') }}" method="GET" class="mb-4 flex gap-2 flex-wrap">
-                <div class="form-control w-full sm:w-1/2">
-                    <input type="text" 
-                           name="search" 
-                           value="{{ request('search') }}" 
-                           placeholder="Search faculty..." 
-                           class="input input-bordered w-full" />
-                </div>
-                <button type="submit" class="btn btn-primary">Search</button>
-            </form>
-
-            <!-- Filter by Department -->
-            <div class="form-control w-full sm:w-1/4">
-                <select name="department" onchange="this.form.submit()" class="select select-bordered w-full">
-                    <option disabled selected>Filter by Department</option>
-                    <option value="All">All</option>
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="Business">Business</option>
-                    <option value="Humanities">Humanities</option>
-                </select>
+        <form action="{{ route('faculties.index') }}" method="GET" class="mb-4 flex gap-2 flex-wrap">
+            <div class="form-control w-full sm:w-1/2">
+                <input type="text" 
+                    name="search" 
+                    value="{{ request('search') }}" 
+                    placeholder="Search faculty..." 
+                    class="input input-bordered w-full" />
             </div>
 
+            <button type="submit" class="btn btn-success">Search</button>
+        </form>
+
             <!-- Add Faculty Button -->
-            <label for="add-faculty-modal" class="btn btn-primary w-full sm:w-auto">+ Add Faculty</label>
+            <label for="add-faculty-modal" class="btn btn-success w-full sm:w-auto">+ Add Faculty</label>
         </div>
 
         <!-- Faculty Table -->
@@ -52,7 +40,6 @@
                         <th>#</th>
                         <th>Faculty Name</th>
                         <th>Email</th>
-                        <th>Department</th>
                         <th>Contact</th>
                         <th>Actions</th>
                     </tr>
@@ -64,7 +51,6 @@
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $faculty->facultyname }}</td>
                             <td>{{ $faculty->email }}</td>
-                            <td>{{ $faculty->department }}</td>
                             <td>{{ $faculty->contact }}</td>
                             <td class="flex gap-2">
                                 <!-- Edit Button -->
@@ -76,64 +62,53 @@
                         </tr>
 
                         <!-- Edit Modal -->
-<input type="checkbox" id="edit-faculty-{{ $faculty->id }}" class="modal-toggle" />
-<div class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Edit Faculty</h3>
+                        <input type="checkbox" id="edit-faculty-{{ $faculty->id }}" class="modal-toggle" />
+                        <div class="modal">
+                            <div class="modal-box">
+                                <h3 class="font-bold text-lg mb-4">Edit Faculty</h3>
 
-        <form action="{{ route('faculties.update', $faculty->id) }}" method="POST">
-            @csrf
-            @method('PUT')
+                                <form action="{{ route('faculties.update', $faculty->id) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
 
-            <!-- Faculty Name -->
-            <div class="form-control mb-3">
-                <label class="label">Faculty Name</label>
-                <input type="text" 
-                       name="facultyname" 
-                       value="{{ old('facultyname', $faculty->facultyname) }}" 
-                       class="input input-bordered w-full" 
-                       required />
-            </div>
+                                    <!-- Faculty Name -->
+                                    <div class="form-control mb-3">
+                                        <label class="label">Faculty Name</label>
+                                        <input type="text" 
+                                            name="facultyname" 
+                                            value="{{ old('facultyname', $faculty->facultyname) }}" 
+                                            class="input input-bordered w-full" 
+                                            required />
+                                    </div>
 
-            <!-- Email -->
-            <div class="form-control mb-3">
-                <label class="label">Email</label>
-                <input type="email" 
-                       name="email" 
-                       value="{{ old('email', $faculty->email) }}" 
-                       class="input input-bordered w-full" 
-                       required />
-            </div>
+                                    <!-- Email -->
+                                    <div class="form-control mb-3">
+                                        <label class="label">Email</label>
+                                        <input type="email" 
+                                            name="email" 
+                                            value="{{ old('email', $faculty->email) }}" 
+                                            class="input input-bordered w-full" 
+                                            required />
+                                    </div>
 
-            <!-- Department -->
-            <div class="form-control mb-3">
-                <label class="label">Department</label>
-                <select name="department" class="select select-bordered w-full" required>
-                    <option disabled>Choose department</option>
-                    <option value="CICS" {{ $faculty->department == 'CICS' ? 'selected' : '' }}>CICS</option>
-                    <option value="CIT" {{ $faculty->department == 'CIT' ? 'selected' : '' }}>CIT</option>
-                    <option value="CTED" {{ $faculty->department == 'CTED' ? 'selected' : '' }}>CTED</option>
-                </select>
-            </div>
+                                    <!-- Contact -->
+                                    <div class="form-control mb-3">
+                                        <label class="label">Contact</label>
+                                        <input type="text" 
+                                            name="contact" 
+                                            value="{{ old('contact', $faculty->contact) }}" 
+                                            class="input input-bordered w-full" 
+                                            required />
+                                    </div>
 
-            <!-- Contact -->
-            <div class="form-control mb-3">
-                <label class="label">Contact</label>
-                <input type="text" 
-                       name="contact" 
-                       value="{{ old('contact', $faculty->contact) }}" 
-                       class="input input-bordered w-full" 
-                       required />
-            </div>
-
-            <!-- Actions -->
-            <div class="modal-action">
-                <label for="edit-faculty-{{ $faculty->id }}" class="btn">Cancel</label>
-                <button type="submit" class="btn btn-primary">Update</button>
-            </div>
-        </form>
-    </div>
-</div>
+                                    <!-- Actions -->
+                                    <div class="modal-action">
+                                        <label for="edit-faculty-{{ $faculty->id }}" class="btn">Cancel</label>
+                                        <button type="submit" class="btn btn-success">Update</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
 
 
                         <!-- Delete Modal -->
@@ -177,23 +152,13 @@
                         <input type="email" name="email" class="input input-bordered w-full" required />
                     </div>
                     <div class="form-control mb-3">
-                        <label class="label">Department</label>
-                        <select name="department" class="select select-bordered w-full" required>
-                            <option disabled selected>Choose department</option>
-                            <option value="CICS">CICS</option>
-                            <option value="CTED">CIT</option>
-                            <option value="CTED">CTED</option>
-                            
-                        </select>
-                    </div>
-                    <div class="form-control mb-3">
                         <label class="label">Contact</label>
                         <input type="text" name="contact" class="input input-bordered w-full" required />
                     </div>
 
                     <div class="modal-action">
                         <label for="add-faculty-modal" class="btn">Cancel</label>
-                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="submit" class="btn btn-success">Save</button>
                     </div>
                 </form>
             </div>

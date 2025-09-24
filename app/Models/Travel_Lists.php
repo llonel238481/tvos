@@ -11,7 +11,19 @@ class Travel_Lists extends Model
         'request',
         'purpose',
         'destination',
-        'means',
+        'transportation_id',
+        'faculty_id', 
+        'conditionalities',
         'status',
     ];
+
+     public function transportation()
+    {
+        return $this->belongsTo(Transportation::class, 'transportation_id');
+    }
+
+    public function faculty()
+    {
+        return $this->belongsTo(Faculty::class, 'faculty_id');
+    }
 }

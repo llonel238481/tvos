@@ -9,11 +9,28 @@ use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
-    public function index()
-    {
-        $users = User::all();
-        return view('users.user', compact('users'));
+    public function index(Request $request)
+{
+    $query = User::query();
+
+    // Search by name or email
+    if ($request->filled('search')) {
+        $search = $request->input('search');
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%");
+        });
     }
+
+    // Filter by role (only if not "All")
+    if ($request->filled('role') && $request->role !== 'All') {
+        $query->where('role', $request->role);
+    }
+
+    $users = $query->get();
+
+    return view('users.user', compact('users'));
+}
 
     public function store(Request $request)
     {
