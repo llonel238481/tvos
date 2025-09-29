@@ -5,6 +5,7 @@
             <div>
                 <h1 class="text-3xl font-bold mb-4">Admin Dashboard</h1>
             </div>
+
             <!-- Stats -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <div class="stats shadow">
@@ -30,7 +31,6 @@
                     </div>
                 </div>
 
-
                 <div class="stats shadow">
                     <div class="stat">
                         <div class="stat-figure text-success">
@@ -45,12 +45,11 @@
                         <div class="stat-desc">Already approved</div>
                     </div>
                 </div>
-
             </div>
 
             <!-- Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                
+
                 <!-- Alerts Card -->
                 <div class="card bg-base-100 shadow-xl">
                     <div class="card-body">
@@ -92,7 +91,6 @@
                     </div>
                 </div>
 
-
                 <!-- Quick Actions Card -->
                 <div class="card bg-base-100 shadow-xl">
                     <div class="card-body">
@@ -101,6 +99,7 @@
                         <div class="grid gap-3">
                             <a href="{{ route('travellist.index') }}" class="btn btn-success w-full">
                                 View All Travel Orders
+                            </a>
                             <a href="{{ route('transportation.index') }}" class="btn btn-success w-full">
                                 Manage Transportation
                             </a>
@@ -112,8 +111,69 @@
                 </div>
             </div>
 
+            <!-- Chart Card -->
+            <div class="card bg-base-100 shadow-xl mb-8">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Monthly Travel Orders</h2>
+                    <div class="w-full h-64 md:h-96">
+                        <canvas id="travelChart"></canvas>
+                    </div>
+                </div>
+            </div>
 
-            <!-- Table -->
+            <!-- Chart.js CDN -->
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const ctx = document.getElementById('travelChart').getContext('2d');
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: [
+                                'January', 'February', 'March', 'April', 'May', 'June',
+                                'July', 'August', 'September', 'October', 'November', 'December'
+                            ],
+                            datasets: [{
+                                label: 'Travel Orders',
+                                data: [
+                                    {{ $janOrders ?? 0 }},
+                                    {{ $febOrders ?? 0 }},
+                                    {{ $marOrders ?? 0 }},
+                                    {{ $aprOrders ?? 0 }},
+                                    {{ $mayOrders ?? 0 }},
+                                    {{ $junOrders ?? 0 }},
+                                    {{ $julOrders ?? 0 }},
+                                    {{ $augOrders ?? 0 }},
+                                    {{ $sepOrders ?? 0 }},
+                                    {{ $octOrders ?? 0 }},
+                                    {{ $novOrders ?? 0 }},
+                                    {{ $decOrders ?? 0 }}
+                                ],
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: true, position: 'top' },
+                                tooltip: { enabled: true }
+                            },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { stepSize: 5 } }
+                            }
+                        }
+                    });
+                });
+            </script>
+
+            <!-- Recent Activity Table -->
             <div class="card bg-base-100 shadow-xl">
                 <div class="card-body">
                     <h2 class="card-title">Recent Activity</h2>
@@ -121,73 +181,44 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>
-                                        <label>
-                                            <input type="checkbox" class="checkbox" />
-                                        </label>
-                                    </th>
-                                    <th>Name</th>
-                                    <th>Job</th>
+                                    <th>#</th>
+                                    <th>Purpose</th>
+                                    <th>Destination</th>
+                                    <th>Date</th>
                                     <th>Status</th>
-                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
+                                @foreach (\App\Models\Travel_Lists::latest()->take(5)->get() as $travel)
                                 <tr>
-                                    <th>
-                                        <label>
-                                            <input type="checkbox" class="checkbox" />
-                                        </label>
-                                    </th>
+                                    <td>{{ $travel->id }}</td>
+                                    <td>{{ $travel->purpose }}</td>
+                                    <td>{{ $travel->destination }}</td>
+                                    <td>{{ $travel->travel_date }}</td>
                                     <td>
-                                        <div class="flex items-center gap-3">
-                                            <div class="avatar">
-                                                <div class="mask mask-squircle w-12 h-12">
-                                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Cy" alt="Avatar" />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="font-bold">Cy Ganderton</div>
-                                                <div class="text-sm opacity-50">United States</div>
-                                            </div>
-                                        </div>
+                                        <span class="badge 
+                                            @if($travel->status == 'Pending') badge-warning
+                                            @elseif($travel->status == 'Approved') badge-success
+                                            @elseif($travel->status == 'Cancelled') badge-error
+                                            @else badge-neutral
+                                            @endif">
+                                            {{ $travel->status }}
+                                        </span>
                                     </td>
-                                    <td>Quality Control Specialist</td>
-                                    <td><div class="badge badge-success gap-2">Active</div></td>
-                                    <th>
-                                        <button class="btn btn-ghost btn-xs">details</button>
-                                    </th>
                                 </tr>
+                                @endforeach
+
+                                @if(\App\Models\Travel_Lists::count() === 0)
                                 <tr>
-                                    <th>
-                                        <label>
-                                            <input type="checkbox" class="checkbox" />
-                                        </label>
-                                    </th>
-                                    <td>
-                                        <div class="flex items-center gap-3">
-                                            <div class="avatar">
-                                                <div class="mask mask-squircle w-12 h-12">
-                                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Hart" alt="Avatar" />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="font-bold">Hart Hagerty</div>
-                                                <div class="text-sm opacity-50">Canada</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>Desktop Support Technician</td>
-                                    <td><div class="badge badge-warning gap-2">Pending</div></td>
-                                    <th>
-                                        <button class="btn btn-ghost btn-xs">details</button>
-                                    </th>
+                                    <td colspan="5" class="text-center text-gray-500">No travel records found</td>
                                 </tr>
+                                @endif
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 </x-app-layout>

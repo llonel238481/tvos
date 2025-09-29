@@ -44,8 +44,10 @@ class EmployeesController extends Controller
     public function edit($id)
     {
         $employee = Employees::findOrFail($id);
-        return view('employee.edit', compact('employee'));
+        $departments = Department::all(); // ✅ Added for dropdown
+        return view('employee.edit', compact('employee', 'departments'));
     }
+
 
     public function update(Request $request, $id)
     {
@@ -72,9 +74,8 @@ class EmployeesController extends Controller
 
    public function getEmployees(Request $request)
     {
-        $query = Employees::with('department'); // eager load department
+        $query = Employees::with('department');
 
-        // 🔎 Search by firstname, lastname, middlename
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -84,18 +85,15 @@ class EmployeesController extends Controller
             });
         }
 
-        // 🏷️ Filter by classification
         if ($request->filled('classification') && $request->classification !== 'All') {
             $query->where('classification', $request->classification);
         }
 
-        // paginate (better for large data)
         $employees = $query->orderBy('lastname')->paginate(10);
-
-        // ✅ must also return departments
         $departments = Department::all();
 
         return view('employee.employee', compact('employees', 'departments'));
     }
+
 
 }

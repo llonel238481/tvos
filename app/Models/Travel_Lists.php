@@ -6,9 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Travel_Lists extends Model
 {
+    protected $table = 'travel_lists';
+
      protected $fillable = [
         'travel_date',
-        'request',
         'purpose',
         'destination',
         'transportation_id',
@@ -26,4 +27,10 @@ class Travel_Lists extends Model
     {
         return $this->belongsTo(Faculty::class, 'faculty_id');
     }
+
+    public function requestParties()
+    {
+        return $this->hasMany(TravelRequestParty::class, 'travel_list_id');
+    }
+
 }

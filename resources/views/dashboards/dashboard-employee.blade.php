@@ -11,7 +11,7 @@
                 <div class="stats shadow">
                     <div class="stat">
                         <div class="stat-title">My Travel Orders</div>
-                        <div class="stat-value">{{ $myTravelOrders }}</div>
+                        <div class="stat-value">{{ $totalTravelOrders }}</div>
                         <div class="stat-desc">As of {{ now()->format('F d, Y') }}</div>
                     </div>
                 </div>
@@ -94,7 +94,59 @@
                 </div>
             </div>
 
-            <!-- Table -->
+            <!-- Monthly Chart -->
+            <div class="card bg-base-100 shadow-xl mb-8">
+                <div class="card-body">
+                    <h2 class="card-title">Monthly Travel Orders</h2>
+                    <div class="relative w-full h-64 sm:h-80 md:h-96">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart.js -->
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script>
+                    const ctx = document.getElementById('monthlyChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                            datasets: [{
+                                label: 'Travel Orders',
+                                data: [
+                                    {{ $janOrders }}, {{ $febOrders }}, {{ $marOrders }}, {{ $aprOrders }},
+                                    {{ $mayOrders }}, {{ $junOrders }}, {{ $julOrders }}, {{ $augOrders }},
+                                    {{ $sepOrders }}, {{ $octOrders }}, {{ $novOrders }}, {{ $decOrders }}
+                                ],
+                                backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false, // 👈 makes it expand in its container
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    labels: {
+                                        color: getComputedStyle(document.documentElement).getPropertyValue('--bc') || '#000'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                </script>
+
+             <!-- Recent Activity Table -->
             <div class="card bg-base-100 shadow-xl">
                 <div class="card-body">
                     <h2 class="card-title">Recent Activity</h2>
@@ -102,68 +154,38 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>
-                                        <label>
-                                            <input type="checkbox" class="checkbox" />
-                                        </label>
-                                    </th>
-                                    <th>Name</th>
-                                    <th>Job</th>
+                                    <th>#</th>
+                                    <th>Purpose</th>
+                                    <th>Destination</th>
+                                    <th>Date</th>
                                     <th>Status</th>
-                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
+                                @foreach (\App\Models\Travel_Lists::latest()->take(5)->get() as $travel)
                                 <tr>
-                                    <th>
-                                        <label>
-                                            <input type="checkbox" class="checkbox" />
-                                        </label>
-                                    </th>
+                                    <td>{{ $travel->id }}</td>
+                                    <td>{{ $travel->purpose }}</td>
+                                    <td>{{ $travel->destination }}</td>
+                                    <td>{{ $travel->travel_date }}</td>
                                     <td>
-                                        <div class="flex items-center gap-3">
-                                            <div class="avatar">
-                                                <div class="mask mask-squircle w-12 h-12">
-                                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Cy" alt="Avatar" />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="font-bold">Cy Ganderton</div>
-                                                <div class="text-sm opacity-50">United States</div>
-                                            </div>
-                                        </div>
+                                        <span class="badge 
+                                            @if($travel->status == 'Pending') badge-warning
+                                            @elseif($travel->status == 'Approved') badge-success
+                                            @elseif($travel->status == 'Cancelled') badge-error
+                                            @else badge-neutral
+                                            @endif">
+                                            {{ $travel->status }}
+                                        </span>
                                     </td>
-                                    <td>Quality Control Specialist</td>
-                                    <td><div class="badge badge-success gap-2">Active</div></td>
-                                    <th>
-                                        <button class="btn btn-ghost btn-xs">details</button>
-                                    </th>
                                 </tr>
+                                @endforeach
+
+                                @if(\App\Models\Travel_Lists::count() === 0)
                                 <tr>
-                                    <th>
-                                        <label>
-                                            <input type="checkbox" class="checkbox" />
-                                        </label>
-                                    </th>
-                                    <td>
-                                        <div class="flex items-center gap-3">
-                                            <div class="avatar">
-                                                <div class="mask mask-squircle w-12 h-12">
-                                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Hart" alt="Avatar" />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="font-bold">Hart Hagerty</div>
-                                                <div class="text-sm opacity-50">Canada</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>Desktop Support Technician</td>
-                                    <td><div class="badge badge-warning gap-2">Pending</div></td>
-                                    <th>
-                                        <button class="btn btn-ghost btn-xs">details</button>
-                                    </th>
+                                    <td colspan="5" class="text-center text-gray-500">No travel records found</td>
                                 </tr>
+                                @endif
                             </tbody>
                         </table>
                     </div>

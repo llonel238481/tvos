@@ -11,7 +11,8 @@ use App\Http\Controllers\TransportationController;
 use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
-    return view('auth.login');
+    return view('tvlreport');
+    // return view('auth.login');
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -42,6 +43,10 @@ Route::resource('faculties', FacultyController::class);
 Route::resource('travellist', TravelListController::class)->middleware(['auth', 'verified']);
 
 Route::get('/travellist/{id}/download', [App\Http\Controllers\TravelListController::class, 'download'])->name('travellist.download');
+
+Route::put('/travellist/{id}/supervisor-approve', [TravelListController::class, 'supervisorApproval'])->name('travellist.supervisor.approve');
+Route::put('/travellist/{id}/ceo-approve', [TravelListController::class, 'ceoApproval'])->name('travellist.ceo.approve');
+
 
 // Departments
 Route::resource('departments', DepartmentController::class)->middleware(['auth', 'verified']);

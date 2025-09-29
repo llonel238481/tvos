@@ -2,94 +2,117 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-            <div>
-                <h1 class="text-3xl font-bold mb-4">CEO Dashboard</h1>
+            <!-- Title -->
+            <div class="mb-6">
+                <h1 class="text-3xl font-bold">CEO Dashboard</h1>
+                <p class="text-gray-500 dark:text-gray-400">Overview of travel orders and activities</p>
             </div>
 
-            <!-- Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div class="stats shadow">
+            <!-- Stats Section -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="stats shadow bg-base-100">
                     <div class="stat">
-                        <div class="stat-title">Total Page Views</div>
-                        <div class="stat-value">89,400</div>
-                        <div class="stat-desc">21% more than last month</div>
+                        <div class="stat-title">Total Travel Orders</div>
+                        <div class="stat-value text-primary">{{ $totalTravelOrders }}</div>
+                        <div class="stat-desc">All time</div>
                     </div>
                 </div>
-                
-                <div class="stats shadow">
+
+                <div class="stats shadow bg-base-100">
                     <div class="stat">
-                        <div class="stat-figure text-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                        </div>
-                        <div class="stat-title">Total Likes</div>
-                        <div class="stat-value text-primary">25.6K</div>
-                        <div class="stat-desc">21% more than last month</div>
+                        <div class="stat-title">Pending</div>
+                        <div class="stat-value text-warning">{{ $pendingTravelOrders }}</div>
+                        <div class="stat-desc">Awaiting approval</div>
                     </div>
                 </div>
-                
-                <div class="stats shadow">
+
+                <div class="stats shadow bg-base-100">
                     <div class="stat">
-                        <div class="stat-figure text-secondary">
-                            <div class="avatar online">
-                                <div class="w-16 rounded-full">
-                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=John" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="stat-value">86%</div>
-                        <div class="stat-title">Tasks done</div>
-                        <div class="stat-desc text-secondary">31 tasks remaining</div>
+                        <div class="stat-title">Approved</div>
+                        <div class="stat-value text-success">{{ $approvedTravelOrders }}</div>
+                        <div class="stat-desc">Approved requests</div>
+                    </div>
+                </div>
+
+                <div class="stats shadow bg-base-100">
+                    <div class="stat">
+                        <div class="stat-title">Cancelled</div>
+                        <div class="stat-value text-error">{{ $cancelledTravelOrders }}</div>
+                        <div class="stat-desc">Cancelled requests</div>
                     </div>
                 </div>
             </div>
 
             <!-- Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <!-- Alert Card -->
+                
+                <!-- Travel Alerts -->
                 <div class="card bg-base-100 shadow-xl">
                     <div class="card-body">
-                        <h2 class="card-title">Alerts</h2>
+                        <h2 class="card-title">Travel Alerts</h2>
                         <div class="space-y-2">
-                            <div class="alert alert-info">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                <span>New software update available.</span>
-                            </div>
-                            <div class="alert alert-success">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span>Your purchase has been confirmed!</span>
-                            </div>
+                            @if($pendingTravelOrders > 0)
+                                <div class="alert alert-warning">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        class="stroke-current shrink-0 w-6 h-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 9v2m0 4h.01M12 19a7 7 0 100-14 7 7 0 000 14z"></path>
+                                    </svg>
+                                    <span>{{ $pendingTravelOrders }} pending travel orders awaiting approval.</span>
+                                </div>
+                            @endif
+
+                            @if($approvedTravelOrders > 0)
+                                <div class="alert alert-success">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        class="stroke-current shrink-0 h-6 w-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>{{ $approvedTravelOrders }} travel orders approved and ready for processing.</span>
+                                </div>
+                            @endif
+
+                            @if($pendingTravelOrders == 0 && $approvedTravelOrders == 0)
+                                <div class="alert alert-info">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        class="stroke-current shrink-0 h-6 w-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+                                    </svg>
+                                    <span>No travel alerts at the moment. 🎉</span>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
 
-                <!-- Form Card -->
+                <!-- Quick Actions -->
                 <div class="card bg-base-100 shadow-xl">
                     <div class="card-body">
                         <h2 class="card-title">Quick Actions</h2>
-                        <div class="form-control w-full">
-                            <label class="label">
-                                <span class="label-text">What is your name?</span>
-                            </label>
-                            <input type="text" placeholder="Type here" class="input input-bordered w-full" />
-                        </div>
-                        <div class="form-control w-full">
-                            <label class="label">
-                                <span class="label-text">Pick a color</span>
-                            </label>
-                            <div class="flex gap-2">
-                                <input type="radio" name="color" class="radio radio-primary" checked />
-                                <input type="radio" name="color" class="radio radio-secondary" />
-                                <input type="radio" name="color" class="radio radio-accent" />
-                            </div>
-                        </div>
-                        <div class="card-actions justify-end mt-4">
-                            <button class="btn btn-primary">Save</button>
+                        <div class="grid gap-3">
+                            <a href="{{ route('travellist.index') }}" class="btn btn-primary w-full">
+                                View Travel Orders
+                            </a>
+                            
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Table -->
+            <!-- Monthly Chart -->
+            <div class="card bg-base-100 shadow-xl mb-8">
+                <div class="card-body">
+                    <h2 class="card-title">Monthly Travel Orders</h2>
+                    <div class="relative w-full h-64 sm:h-80 md:h-96">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Recent Activity Table -->
             <div class="card bg-base-100 shadow-xl">
                 <div class="card-body">
                     <h2 class="card-title">Recent Activity</h2>
@@ -97,73 +120,87 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>
-                                        <label>
-                                            <input type="checkbox" class="checkbox" />
-                                        </label>
-                                    </th>
-                                    <th>Name</th>
-                                    <th>Job</th>
+                                    <th>#</th>
+                                    <th>Purpose</th>
+                                    <th>Destination</th>
+                                    <th>Date</th>
                                     <th>Status</th>
-                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
+                                @foreach (\App\Models\Travel_Lists::latest()->take(5)->get() as $travel)
                                 <tr>
-                                    <th>
-                                        <label>
-                                            <input type="checkbox" class="checkbox" />
-                                        </label>
-                                    </th>
+                                    <td>{{ $travel->id }}</td>
+                                    <td>{{ $travel->purpose }}</td>
+                                    <td>{{ $travel->destination }}</td>
+                                    <td>{{ $travel->travel_date }}</td>
                                     <td>
-                                        <div class="flex items-center gap-3">
-                                            <div class="avatar">
-                                                <div class="mask mask-squircle w-12 h-12">
-                                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Cy" alt="Avatar" />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="font-bold">Cy Ganderton</div>
-                                                <div class="text-sm opacity-50">United States</div>
-                                            </div>
-                                        </div>
+                                        <span class="badge 
+                                            @if($travel->status == 'Pending') badge-warning
+                                            @elseif($travel->status == 'Approved') badge-success
+                                            @elseif($travel->status == 'Cancelled') badge-error
+                                            @else badge-neutral
+                                            @endif">
+                                            {{ $travel->status }}
+                                        </span>
                                     </td>
-                                    <td>Quality Control Specialist</td>
-                                    <td><div class="badge badge-success gap-2">Active</div></td>
-                                    <th>
-                                        <button class="btn btn-ghost btn-xs">details</button>
-                                    </th>
                                 </tr>
+                                @endforeach
+
+                                @if(\App\Models\Travel_Lists::count() === 0)
                                 <tr>
-                                    <th>
-                                        <label>
-                                            <input type="checkbox" class="checkbox" />
-                                        </label>
-                                    </th>
-                                    <td>
-                                        <div class="flex items-center gap-3">
-                                            <div class="avatar">
-                                                <div class="mask mask-squircle w-12 h-12">
-                                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Hart" alt="Avatar" />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="font-bold">Hart Hagerty</div>
-                                                <div class="text-sm opacity-50">Canada</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>Desktop Support Technician</td>
-                                    <td><div class="badge badge-warning gap-2">Pending</div></td>
-                                    <th>
-                                        <button class="btn btn-ghost btn-xs">details</button>
-                                    </th>
+                                    <td colspan="5" class="text-center text-gray-500">No travel records found</td>
                                 </tr>
+                                @endif
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
+
+    <!-- Chart.js -->
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('monthlyChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Travel Orders',
+                    data: [
+                        {{ $janOrders }}, {{ $febOrders }}, {{ $marOrders }}, {{ $aprOrders }},
+                        {{ $mayOrders }}, {{ $junOrders }}, {{ $julOrders }}, {{ $augOrders }},
+                        {{ $sepOrders }}, {{ $octOrders }}, {{ $novOrders }}, {{ $decOrders }}
+                    ],
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // 👈 makes it expand in its container
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--bc') || '#000'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
 </x-app-layout>
