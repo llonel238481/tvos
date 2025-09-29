@@ -11,8 +11,8 @@ use App\Http\Controllers\TransportationController;
 use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
-    return view('tvlreport');
-    // return view('auth.login');
+    // return view('tvlreport');
+    return view('auth.login');
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
