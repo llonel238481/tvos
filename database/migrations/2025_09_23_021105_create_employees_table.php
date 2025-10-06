@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('lastname');
             $table->string('extensionname')->nullable();
             $table->enum('sex', ['Male', 'Female']);
+            $table->string('email')->unique(); // ✅ Added email
 
             // Department foreign key
             $table->foreignId('department_id')

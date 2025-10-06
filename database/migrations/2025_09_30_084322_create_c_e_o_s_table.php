@@ -11,17 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('faculties', function (Blueprint $table) {
+        Schema::create('c_e_o_s', function (Blueprint $table) {
             $table->id();
-            $table->string('facultyname');
+            $table->string('name');
             $table->string('email')->unique();
-            $table->string('contact');
-
-            // Department Foreign key
-            $table->foreignId('department_id')
-                  ->nullable() // optional, remove if department is mandatory
-                  ->constrained('departments')
-                  ->onDelete('set null');
+            $table->string('contact')->nullable();
+            // $table->string('department')->nullable(); // if needed
+            $table->string('signature')->nullable();
 
             // User foreign key
             $table->foreignId('user_id')
@@ -29,9 +25,7 @@ return new class extends Migration
                 ->unique()
                 ->constrained('users')
                 ->onDelete('set null');
-
-             $table->string('signature')->nullable();     
-
+                
             $table->timestamps();
         });
     }
@@ -41,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('faculties');
+        Schema::dropIfExists('c_e_o_s');
     }
 };

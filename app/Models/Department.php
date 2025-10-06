@@ -18,4 +18,10 @@ class Department extends Model
     {
         return $this->hasMany(Employees::class);
     }
+
+    // One department has many faculties
+    public function faculties()
+    {
+        return $this->hasMany(Faculty::class);
+    }
 }

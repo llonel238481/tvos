@@ -13,7 +13,9 @@ class Employees extends Model
         'lastname',
         'extensionname',     
         'department_id',
+        'email',
         'sex',
+        'user_id',
     ];
 
     // Each employee is associated with one user account
@@ -27,6 +29,12 @@ class Employees extends Model
     {
         return $this->belongsTo(Department::class, 'department_id');
     }
+
+    public function travelLists()
+    {
+        return $this->hasMany(Travel_Lists::class);
+    }
+
 
 
 }

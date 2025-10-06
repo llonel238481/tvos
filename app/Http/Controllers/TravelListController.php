@@ -6,16 +6,39 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Travel_Lists;
 use App\Models\Transportation;
 use App\Models\Faculty;
+use App\Models\Employees;
 use App\Models\TravelRequestParty;
+use App\Models\CEO;
+use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
-use PhpOffice\PhpWord\PhpWord;
-use PhpOffice\PhpWord\IOFactory;
 
 class TravelListController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Travel_Lists::with(['transportation', 'requestParties']);
+        $query = Travel_Lists::with(['transportation', 'requestParties', 'faculty', 'ceo']);
+
+        if (Auth::check()) {
+            $user = Auth::user();
+
+            if ($user->role === 'CEO') {
+                $query->where('status', 'Recommended for Approval');
+            } elseif ($user->role === 'Supervisor') {
+                $query->whereIn('status', ['Pending', 'Recommended for Approval']);
+            } elseif ($user->role === 'Employee') {
+                $employee = Employees::where('user_id', $user->id)->first();
+                if ($employee) {
+                    $query->where('employee_id', $employee->id);
+                } else {
+                    $query->whereNull('employee_id');
+                }
+            } else {
+                if ($request->filled('status')) {
+                    $query->where('status', $request->status);
+                }
+            }
+        }
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -27,58 +50,47 @@ class TravelListController extends Controller
             });
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $travel_lists = $query->get();
-        $totalTravelOrders = Travel_Lists::count();
+        $travel_lists = $query->latest()->get();
         $transportations = Transportation::all();
         $faculties = Faculty::all();
-
-        $userTravelCount = 0;
-        if (Auth::check()) {
-            $user = Auth::user();
-            $userTravelCount = Travel_Lists::whereHas('requestParties', function ($q) use ($user) {
-                $q->where('name', $user->name);
-            })->count();
-        }
+        $ceos = CEO::all();
 
         return view('travellist.travellist', compact(
             'travel_lists',
             'transportations',
-            'totalTravelOrders',
             'faculties',
-            'userTravelCount'
+            'ceos'
         ));
-    }
-
-    public function create()
-    {
-        $transportations = Transportation::all();
-        $faculties = Faculty::all();
-        return view('travellist.create', compact('transportations', 'faculties'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'travel_date' => 'required|date',
+            'travel_from' => 'required|date',
+            'travel_to' => 'required|date|after_or_equal:travel_from',
             'request_parties' => 'required|string',
             'purpose' => 'required|string|max:255',
             'destination' => 'required|string|max:255',
-            // 'conditionalities' => 'required|in:On Official Business,On Official Time,On Official Business and Time',
             'transportation_id' => 'required|exists:transportations,id',
             'faculty_id' => 'required|exists:faculties,id',
+            'ceo_id' => 'nullable|exists:c_e_o_s,id',
         ]);
 
+        $employee = Employees::where('user_id', Auth::id())->first();
+        if (!$employee) {
+            return redirect()->back()->with('error', 'Employee record not found for this user.');
+        }
+
         $travel = Travel_Lists::create([
-            'travel_date' => $validated['travel_date'],
+            'travel_from' => $validated['travel_from'],
+            'travel_to' => $validated['travel_to'],
             'purpose' => $validated['purpose'],
             'destination' => $validated['destination'],
             'conditionalities' => null,
             'transportation_id' => $validated['transportation_id'],
             'faculty_id' => $validated['faculty_id'],
+            'ceo_id' => $validated['ceo_id'] ?? null,
+            'employee_id' => $employee->id,
             'status' => 'Pending',
         ]);
 
@@ -92,188 +104,136 @@ class TravelListController extends Controller
             }
         }
 
+        // 🔔 Notify Supervisor
+        $faculty = Faculty::find($validated['faculty_id']);
+        if ($faculty && $faculty->user_id) {
+            Notification::create([
+                'title' => 'New Travel Order Submitted',
+                'message' => 'A new travel order has been submitted and needs your approval.',
+                'user_id' => $faculty->user_id,
+                'travel_id' => $travel->id,  // ✅ track
+            ]);
+        }
+
         return redirect()->route('travellist.index')->with('success', 'Travel list created successfully.');
     }
 
-    public function edit($id)
+    public function supervisorApprove($id)
     {
-        $travel_list = Travel_Lists::with('requestParties')->findOrFail($id);
-        $transportations = Transportation::all();
-        $faculties = Faculty::all();
-        return view('travellist.edit', compact('travel_list', 'transportations', 'faculties'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'travel_date' => 'required|date',
-            'request_parties' => 'required|string',
-            'purpose' => 'required|string|max:255',
-            'destination' => 'required|string|max:255',
-            'conditionalities' => 'required|in:On Official Business,On Official Time,On Official Business and Time',
-            'transportation_id' => 'required|exists:transportations,id',
-            'faculty_id' => 'required|exists:faculties,id',
-            'status' => 'required|string|max:50',
-        ]);
-
-        $travelData = $validated;
-        unset($travelData['request_parties']); // remove non-existent column
         $travel = Travel_Lists::findOrFail($id);
-        $travel->update($travelData);
 
-        $travel->requestParties()->delete();
-        $names = preg_split('/\r\n|\r|\n/', trim($validated['request_parties']));
-        foreach ($names as $name) {
-            if (!empty(trim($name))) {
-                TravelRequestParty::create([
-                    'travel_list_id' => $travel->id,
-                    'name' => trim($name),
-                ]);
-            }
+        if ($travel->status !== 'Pending') {
+            return redirect()->back()->with('error', 'This travel order cannot be approved.');
         }
 
-        return redirect()->route('travellist.index')->with('success', 'Travel list updated successfully.');
+        $faculty = Faculty::where('user_id', Auth::id())->first();
+        if (!$faculty || !$faculty->signature) {
+            return redirect()->back()->with('error', 'No signature found for this supervisor.');
+        }
+
+        $travel->update([
+            'status' => 'Recommended for Approval',
+            'supervisor_signature' => $faculty->signature,
+        ]);
+
+        // 🗑️ Delete related Supervisor notification
+        Notification::where('travel_id', $travel->id)
+            ->where('user_id', Auth::id())
+            ->delete();
+
+        // 🔔 Notify CEO
+        if ($travel->ceo && $travel->ceo->user_id) {
+            Notification::create([
+                'title' => 'Travel Order Recommended',
+                'message' => 'A travel order has been recommended for your approval.',
+                'user_id' => $travel->ceo->user_id,
+                'travel_id' => $travel->id,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Travel order approved by Supervisor.');
+    }
+
+    public function ceoApprove(Request $request, $id)
+    {
+        $travel = Travel_Lists::findOrFail($id);
+
+        if ($travel->status !== 'Recommended for Approval') {
+            return redirect()->back()->with('error', 'This travel order cannot be approved at its current status.');
+        }
+
+        $request->validate([
+            'conditionalities' => 'required|in:On Official Business,On Official Time,On Official Business and Time',
+        ]);
+
+        $ceo = $travel->ceo;
+        if (!$ceo || !$ceo->signature) {
+            return redirect()->back()->with('error', 'The assigned CEO does not have a signature.');
+        }
+
+        $travel->update([
+            'status' => 'CEO Approved',
+            'conditionalities' => $request->conditionalities,
+            'ceo_signature' => $ceo->signature,
+        ]);
+
+        // 🗑️ Delete CEO Notification for this travel
+        Notification::where('travel_id', $travel->id)
+            ->where('user_id', Auth::id())
+            ->delete();
+
+        // 🔔 Notify Employee
+        $employeeUserId = Employees::find($travel->employee_id)->user_id ?? null;
+        if ($employeeUserId) {
+            Notification::create([
+                'title' => 'Travel Order Approved',
+                'message' => 'Your travel order has been approved by the CEO.',
+                'user_id' => $employeeUserId,
+                'travel_id' => $travel->id,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Travel order successfully approved by CEO.');
     }
 
     public function destroy($id)
     {
-        $travel_list = Travel_Lists::findOrFail($id);
-        $travel_list->delete();
+        $travel = Travel_Lists::findOrFail($id);
+
+        // 🧹 Delete all related notifications first
+        Notification::where('travel_id', $travel->id)->delete();
+
+        // 🔔 Notify involved users about cancellation
+        $employeeUserId = Employees::find($travel->employee_id)->user_id ?? null;
+        if ($employeeUserId) {
+            Notification::create([
+                'title' => 'Travel Order Cancelled',
+                'message' => 'Your travel order has been cancelled.',
+                'user_id' => $employeeUserId,
+                'travel_id' => $travel->id,
+            ]);
+        }
+
+        if ($travel->faculty && $travel->faculty->user_id) {
+            Notification::create([
+                'title' => 'Travel Order Cancelled',
+                'message' => 'A travel order under your supervision has been cancelled.',
+                'user_id' => $travel->faculty->user_id,
+                'travel_id' => $travel->id,
+            ]);
+        }
+
+        if ($travel->ceo && $travel->ceo->user_id) {
+            Notification::create([
+                'title' => 'Travel Order Cancelled',
+                'message' => 'A travel order assigned to you has been cancelled.',
+                'user_id' => $travel->ceo->user_id,
+                'travel_id' => $travel->id,
+            ]);
+        }
+
+        $travel->delete();
+
         return redirect()->route('travellist.index')->with('success', 'Travel list deleted successfully.');
     }
-
-    public function supervisorApproval(Request $request, $id)
-    {
-        $travel = Travel_Lists::findOrFail($id);
-
-        if ($request->status === 'Supervisor Approved') {
-            if ($request->hasFile('supervisor_signature')) {
-                $path = $request->file('supervisor_signature')->store('signatures', 'public');
-                $travel->supervisor_signature = $path;
-            }
-            $travel->status = 'Supervisor Approved';
-        } else {
-            $travel->status = 'Declined by Supervisor';
-        }
-
-        $travel->save();
-        return back()->with('success', 'Supervisor action recorded.');
-    }
-
-    public function ceoApproval(Request $request, $id)
-    {
-        $travel = Travel_Lists::findOrFail($id);
-
-        if ($request->status === 'CEO Approved') {
-            $request->validate([
-                'conditionalities' => 'required|in:On Official Business,On Official Time,On Official Business and Time',
-            ]);
-
-            if ($request->hasFile('ceo_signature')) {
-                $path = $request->file('ceo_signature')->store('signatures', 'public');
-                $travel->ceo_signature = $path;
-            }
-
-            $travel->conditionalities = $request->conditionalities;
-            $travel->status = 'CEO Approved';
-        } else {
-            $travel->status = 'Declined by CEO';
-        }
-
-        $travel->save();
-        return back()->with('success', 'CEO action recorded.');
-    }
-
-    
-    public function download($id)
-    {
-        $travel = Travel_Lists::with('requestParties', 'transportation')->findOrFail($id);
-
-        if ($travel->status !== 'CEO Approved') {
-            return redirect()->back()->with('error', 'Only approved travel orders can be downloaded.');
-        }
-
-        $phpWord = new PhpWord();
-        $section = $phpWord->addSection([
-            'orientation' => 'portrait',
-            'marginTop' => 1200,
-            'marginLeft' => 1200,
-            'marginRight' => 1200,
-            'marginBottom' => 1200,
-        ]);
-
-        // ✅ Logo
-        $section->addImage(
-            public_path('img/csulogo.png'),
-            [
-                'width' => 100,
-                'height' => 100,
-                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
-            ]
-        );
-
-        $section->addText('Travel Order', ['bold' => true, 'size' => 18], ['alignment' => 'center', 'spaceAfter' => 200]);
-
-        // ✅ Table
-        $table = $section->addTable([
-            'borderSize' => 6,
-            'borderColor' => '999999',
-            'cellMargin' => 80,
-        ]);
-
-        $table->addRow();
-        $table->addCell(3000)->addText('Date');
-        $table->addCell(6000)->addText($travel->travel_date);
-
-        $table->addRow();
-        $table->addCell(3000)->addText('Requesting Parties');
-        $table->addCell(6000)->addText($travel->requestParties->pluck('name')->join(', '));
-
-        $table->addRow();
-        $table->addCell(3000)->addText('Purpose');
-        $table->addCell(6000)->addText($travel->purpose);
-
-        $table->addRow();
-        $table->addCell(3000)->addText('Destination');
-        $table->addCell(6000)->addText($travel->destination);
-
-        $table->addRow();
-        $table->addCell(3000)->addText('Conditionalities');
-        $table->addCell(6000)->addText($travel->conditionalities);
-
-        $table->addRow();
-        $table->addCell(3000)->addText('Means');
-        $table->addCell(6000)->addText($travel->transportation->transportvehicle ?? 'N/A');
-
-        // ✅ Add CEO Signature
-        if ($travel->ceo_signature) {
-            $section->addTextBreak(2);
-            $section->addText('Approved by:', ['bold' => true]);
-
-            // ✅ Correct path (go through storage/app/public)
-            $signaturePath = storage_path('app/public/' . $travel->ceo_signature);
-
-            if (file_exists($signaturePath)) {
-                $section->addImage(
-                    $signaturePath,
-                    [
-                        'width' => 120,
-                        'height' => 50,
-                        'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::LEFT,
-                    ]
-                );
-                $section->addText('CEO Signature', ['italic' => true, 'size' => 10]);
-            } else {
-                $section->addText('[Signature file missing]', ['italic' => true, 'color' => 'FF0000']);
-            }
-        }
-
-        $fileName = 'TravelOrder_' . $travel->id . '.docx';
-        $tempFile = tempnam(sys_get_temp_dir(), 'word');
-        $writer = IOFactory::createWriter($phpWord, 'Word2007');
-        $writer->save($tempFile);
-
-        return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
-    }
-
 }

@@ -27,12 +27,12 @@
                     </select>
                 </div>
 
-                <button type="submit" class="btn btn-success">Search</button>
+                <button type="submit" class="btn btn-success"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-icon lucide-search"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg></button>
             </form>
 
             @if(in_array(auth()->user()->role, ['Admin', 'Employee']))
                 <button class="btn btn-success w-full sm:w-auto" onclick="document.getElementById('add-travel-modal').showModal()">
-                    + Add Travel Order
+                    + Request Travel Order
                 </button>
             @endif 
         </div>
@@ -43,23 +43,27 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Date</th>
+                        <th>Departure</th>
+                        <th>Return</th>
                         <th>Purpose</th>
                         <th>Requesting Parties</th>
                         <th>Destination</th>
                         <th>Status</th>
+                        <th>Approver</th>
+                        <th>CEO</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($travel_lists as $index => $travel)
                         <tr>
-                            <td>{{ $index + 1 }}</td>
-                            <td>{{ $travel->travel_date }}</td>
-                            <td>{{ $travel->purpose }}</td>
+                            <td class="whitespace-nowrap">{{ $index + 1 }}</td>
+                            <td class="whitespace-nowrap">{{ $travel->travel_from }}</td>
+                            <td class="whitespace-nowrap">{{ $travel->travel_to }}</td>
+                            <td class="whitespace-nowrap">{{ $travel->purpose }}</td>
 
                             <!-- Requesting Parties -->
-                            <td>
+                            <td class="whitespace-nowrap">
                                 @if($travel->requestParties && $travel->requestParties->isNotEmpty())
                                     <ul class="list-disc pl-4">
                                         @foreach($travel->requestParties as $party)
@@ -72,69 +76,77 @@
                             </td>
 
                             <!-- Destination -->
-                            <td>{{ $travel->destination }}</td>
+                            <td class="whitespace-nowrap">{{ $travel->destination }}</td>
 
-                            <td>
+                            <!-- Status -->
+                            <td >
                                 <span class="inline-block px-2 py-1 text-xs sm:text-sm font-semibold rounded 
                                     @if($travel->status == 'Pending') bg-yellow-500 text-white
-                                    @elseif($travel->status == 'Supervisor Approved') bg-blue-500 text-white
+                                    @elseif($travel->status == 'Recommended for Approval') bg-blue-500 text-white
                                     @elseif($travel->status == 'CEO Approved') bg-green-500 text-white
                                     @elseif($travel->status == 'Declined') bg-red-500 text-white
                                     @else bg-gray-400 text-white
                                     @endif
-                                    truncate max-w-[100px] sm:max-w-[150px] text-center">
+                                    text-center">
                                     {{ $travel->status }}
                                 </span>
-
                             </td>
 
+                            <!-- Approver -->
+                            <td class="whitespace-nowrap">{{ $travel->faculty->facultyname ?? 'N/A' }}</td>
+
+                            <!-- CEO -->
+                            <td class="whitespace-nowrap">{{ $travel->ceo->name ?? 'N/A' }}</td>
+
                             <!-- Actions -->
-                            <td class="flex gap-2">
-                                <!-- View - available to all -->
-                                <button class="btn btn-sm btn-success" onclick="document.getElementById('view-travel-{{ $travel->id }}').showModal()">View</button>
+                            <td class="px-4 py-2 flex flex-col sm:flex-row gap-2">
+                                <button class="btn btn-sm btn-outline w-full sm:w-auto" 
+                                    onclick="document.getElementById('view-travel-{{ $travel->id }}').showModal()"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-icon lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg></button>
 
-                                <!-- Supervisor: Review when Pending -->
                                 @if(auth()->user()->role === 'Supervisor' && $travel->status === 'Pending')
-                                    <button class="btn btn-sm btn-primary" onclick="document.getElementById('supervisor-approve-{{ $travel->id }}').showModal()">Review</button>
+                                    <form action="{{ route('travellist.supervisor.approve', $travel->id) }}" method="POST" class="w-full sm:w-auto">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-primary w-full"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-icon lucide-circle-check"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></button>
+                                    </form>
                                 @endif
 
-                                <!-- CEO: Review when Supervisor Approved -->
-                                @if(auth()->user()->role === 'CEO' && $travel->status === 'Supervisor Approved')
-                                    <button class="btn btn-sm btn-primary" onclick="document.getElementById('ceo-approve-{{ $travel->id }}').showModal()">Review</button>
+                                @if(auth()->user()->role === 'CEO' && $travel->status === 'Recommended for Approval')
+                                    <button class="btn btn-sm btn-primary w-full sm:w-auto" 
+                                        onclick="document.getElementById('ceo-review-{{ $travel->id }}').showModal()">Review</button>
                                 @endif
 
-                                <!-- User: download when CEO Approved -->
-                                @if(in_array(auth()->user()->role, ['Admin','User']) && $travel->status === 'CEO Approved')
-                                    <a href="{{ route('travellist.download', $travel->id) }}" class="btn btn-sm btn-success" target="_blank">Download</a>
+                                @if($travel->status === 'CEO Approved')
+                                    <a href="{{ route('report.download', $travel->id) }}" 
+                                    class="btn btn-sm btn-success w-full sm:w-auto text-center" 
+                                    target="_blank"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-icon lucide-download"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></a>
                                 @endif
 
-                                <!-- Edit/Delete for Admin -->
                                 @if(auth()->user()->role === 'Admin')
-                                    <button class="btn btn-sm btn-outline" onclick="document.getElementById('edit-travel-{{ $travel->id }}').showModal()">Edit</button>
-                                    <button class="btn btn-sm btn-error" onclick="document.getElementById('delete-travel-{{ $travel->id }}').showModal()">Delete</button>
+                                    <button class="btn btn-sm btn-primary w-full sm:w-auto" 
+                                        onclick="document.getElementById('edit-travel-{{ $travel->id }}').showModal()"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen-icon lucide-square-pen"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg></button>
+                                    <button class="btn btn-sm btn-error w-full sm:w-auto" 
+                                        onclick="document.getElementById('delete-travel-{{ $travel->id }}').showModal()"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash2-icon lucide-trash-2"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                                 @endif
                             </td>
                         </tr>
 
                         <!-- View Modal -->
                         <dialog id="view-travel-{{ $travel->id }}" class="modal">
-                            <div class="modal-box max-w-3xl bg-base-100 text-base-content rounded-lg">
+                            <div class="modal-box max-w-3xl bg-base-100 text-base-content rounded-lg relative">
+                                <button type="button" class="btn btn-sm btn-circle absolute right-2 top-2" onclick="document.getElementById('view-travel-{{ $travel->id }}').close();">✕</button>
                                 <h3 class="font-bold text-xl mb-4 text-center border-b border-base-300 pb-2 dark:border-base-100">Travel Order Details</h3>
-
+                                
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <!-- Date -->
                                     <div class="p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100">
-                                        <p class="font-semibold">Date</p>
-                                        <p>{{ $travel->travel_date }}</p>
+                                        <p class="font-semibold">Date of Travel</p>
+                                        <p>{{ $travel->travel_from }} to {{ $travel->travel_to }}</p>
                                     </div>
 
-                                    <!-- Status -->
                                     <div class="p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100">
                                         <p class="font-semibold">Status</p>
                                         <p>{{ $travel->status }}</p>
                                     </div>
 
-                                    <!-- Requesting Parties -->
                                     <div class="md:col-span-2 p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100">
                                         <p class="font-semibold mb-1">Requesting Parties</p>
                                         @if($travel->requestParties && $travel->requestParties->isNotEmpty())
@@ -148,25 +160,21 @@
                                         @endif
                                     </div>
 
-                                    <!-- Purpose -->
                                     <div class="md:col-span-2 p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100">
                                         <p class="font-semibold">Purpose</p>
                                         <p>{{ $travel->purpose }}</p>
                                     </div>
 
-                                    <!-- Destination -->
                                     <div class="md:col-span-2 p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100">
                                         <p class="font-semibold">Destination</p>
                                         <p>{{ $travel->destination }}</p>
                                     </div>
 
-                                    <!-- Transportation -->
                                     <div class="p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100">
                                         <p class="font-semibold">Transportation</p>
                                         <p>{{ $travel->transportation->transportvehicle ?? 'No Transportation' }}</p>
                                     </div>
 
-                                    <!-- Conditionalities -->
                                     <div class="p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100">
                                         <p class="font-semibold mb-1">Conditionalities</p>
                                         <div class="space-y-1">
@@ -181,210 +189,220 @@
                                         </div>
                                     </div>
 
-                                    <!-- Approver -->
                                     <div class="md:col-span-2 p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100">
                                         <p class="font-semibold">Approver</p>
                                         <p>{{ $travel->faculty->facultyname ?? 'No Approver' }}</p>
                                     </div>
 
+                                    <div class="md:col-span-2 p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100">
+                                        <p class="font-semibold">CEO</p>
+                                        <p>{{ $travel->ceo->name ?? 'No CEO Assigned' }}</p>
+                                    </div>
+
                                     <!-- Signatures -->
                                     <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                                        <!-- Supervisor Signature -->
                                         <div class="p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100 text-center">
                                             <p class="font-semibold mb-2">Supervisor Signature</p>
-                                            @if(!empty($travel->supervisor_signature))
-                                                <img src="{{ asset('storage/' . $travel->supervisor_signature) }}" alt="Supervisor signature" class="max-h-28 border border-base-300 dark:border-base-100 mx-auto" />
+                                            @if($travel->supervisor_signature)
+                                                <img src="{{ asset('storage/' . $travel->supervisor_signature) }}" 
+                                                    alt="Supervisor Signature" 
+                                                    class="max-h-28 mx-auto border border-base-300 dark:border-base-100">
                                             @else
-                                                <p class="text-sm text-gray-500 dark:text-gray-400">Not provided</p>
+                                                <p class="text-sm text-gray-500 italic">No Supervisor Signature</p>
                                             @endif
                                         </div>
+
+                                        <!-- CEO Signature -->
                                         <div class="p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100 text-center">
                                             <p class="font-semibold mb-2">CEO Signature</p>
-                                            @if(!empty($travel->ceo_signature))
-                                                <img src="{{ asset('storage/' . $travel->ceo_signature) }}" alt="CEO signature" class="max-h-28 border border-base-300 dark:border-base-100 mx-auto" />
+                                            @if($travel->ceo_signature)
+                                                <img src="{{ asset('storage/' . $travel->ceo_signature) }}" 
+                                                    alt="CEO Signature" 
+                                                    class="max-h-28 mx-auto border border-base-300 dark:border-base-100">
                                             @else
-                                                <p class="text-sm text-gray-500 dark:text-gray-400">Not provided</p>
+                                                <p class="text-sm text-gray-500 italic">No CEO Signature</p>
                                             @endif
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="modal-action mt-6">
-                                    <form method="dialog"><button class="btn">Close</button></form>
+                                @auth
+                                    @if(auth()->user()->role === 'Supervisor' || auth()->user()->role === 'Admin')
+                                        <div class="modal-action mt-6">
+                                            <form method="dialog">
+                                                <button class="btn" title="Close">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x">
+                                                        <circle cx="12" cy="12" r="10"/>
+                                                        <path d="m15 9-6 6"/>
+                                                        <path d="m9 9 6 6"/>
+                                                    </svg>
+                                                </button>
+                                            </form> 
 
-                                    @if($travel->status === 'CEO Approved')
-                                        <a href="{{ route('travellist.download', $travel->id) }}" class="btn btn-success" target="_blank">Download</a>
+                                            <a href="{{ route('report.preview', $travel->id) }}" class="btn btn-success" target="_blank" title="Download Travel Order">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-down">
+                                                    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+                                                    <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+                                                    <path d="M12 18v-6"/>
+                                                    <path d="m9 15 3 3 3-3"/>
+                                                </svg>
+                                            </a>
+                                        </div>
                                     @endif
-                                </div>
+                                @endauth
+                                
+                               
                             </div>
                         </dialog>
+                        
 
+                        <!-- Edit Travel Modal -->
+                        <dialog id="edit-travel-{{ $travel->id }}" class="modal">
+                            <div class="modal-box max-w-2xl bg-base-100 text-base-content shadow-xl rounded-2xl border border-base-300">
+                                <!-- Close Button -->
+                                <button type="button"
+                                    class="btn btn-sm btn-circle absolute right-3 top-3"
+                                    onclick="document.getElementById('edit-travel-{{ $travel->id }}').close();">
+                                    ✕
+                                </button>
 
-                       <!-- Supervisor Review Modal -->
-                        <dialog id="supervisor-approve-{{ $travel->id }}" class="modal">
-                            <div class="modal-box">
-                                <h3 class="font-bold text-lg mb-3">Supervisor Review</h3>
+                                <!-- Header -->
+                                <div class="mb-5 text-center">
+                                    <h3 class="text-2xl font-bold">Edit Travel Order</h3>
+                                    <p class="text-sm text-gray-500">Update the details below and save your changes</p>
+                                </div>
 
-                                <form id="supervisor-form-{{ $travel->id }}" action="{{ route('travellist.supervisor.approve', $travel->id) }}" method="POST" enctype="multipart/form-data">
+                                <!-- Form -->
+                                <form id="edit-form-{{ $travel->id }}" action="{{ route('travellist.update', $travel->id) }}" method="POST" class="space-y-4">
                                     @csrf
                                     @method('PUT')
 
-                                    <div class="form-control mb-3">
-                                        <label class="label">Signature (image) <span class="text-red-500">*</span></label>
-                                        <input type="file" name="supervisor_signature" accept="image/*" class="file-input file-input-bordered w-full" required />
+                                    <!-- Dates -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="label font-semibold">Date From</label>
+                                            <input type="date" name="travel_from" value="{{ $travel->travel_from }}" class="input input-bordered w-full" required>
+                                        </div>
+                                        <div>
+                                            <label class="label font-semibold">Date To</label>
+                                            <input type="date" name="travel_to" value="{{ $travel->travel_to }}" class="input input-bordered w-full" required>
+                                        </div>
                                     </div>
 
-                                    <input type="hidden" name="status" id="supervisor-status-{{ $travel->id }}" value="Supervisor Approved" />
+                                    <!-- Requesting Parties -->
+                                    <div>
+                                        <label class="label font-semibold">Requesting Parties</label>
+                                        <textarea name="request_parties" class="textarea textarea-bordered w-full" rows="4" placeholder="Enter one name per line">{{ $travel->requestParties->pluck('name')->implode("\n") }}</textarea>
+                                    </div>
 
-                                    <div class="modal-action">
-                                        <button type="button" class="btn btn-success"
-                                            onclick="document.getElementById('supervisor-status-{{ $travel->id }}').value='Supervisor Approved'; document.getElementById('supervisor-form-{{ $travel->id }}').requestSubmit();">
-                                            Approve
-                                        </button>
+                                    <!-- Purpose -->
+                                    <div>
+                                        <label class="label font-semibold">Purpose</label>
+                                        <input type="text" name="purpose" value="{{ $travel->purpose }}" class="input input-bordered w-full" placeholder="Purpose of travel" required>
+                                    </div>
 
+                                    <!-- Destination -->
+                                    <div>
+                                        <label class="label font-semibold">Destination</label>
+                                        <input type="text" name="destination" value="{{ $travel->destination }}" class="input input-bordered w-full" placeholder="Enter destination" required>
+                                    </div>
 
-                                        <!-- Cancel closes modal without submitting, no validation triggered -->
-                                        <button type="button" class="btn" onclick="document.getElementById('supervisor-approve-{{ $travel->id }}').close();">
-                                            Cancel
-                                        </button>
+                                    <!-- Transportation / Approver / CEO -->
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label class="label font-semibold">Transportation</label>
+                                            <select name="transportation_id" class="select select-bordered w-full" required>
+                                                @foreach($transportations as $transport)
+                                                    <option value="{{ $transport->id }}" {{ $travel->transportation_id == $transport->id ? 'selected' : '' }}>
+                                                        {{ $transport->transportvehicle }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label class="label font-semibold">Approver</label>
+                                            <select name="faculty_id" class="select select-bordered w-full" required>
+                                                @foreach($faculties as $faculty)
+                                                    <option value="{{ $faculty->id }}" {{ $travel->faculty_id == $faculty->id ? 'selected' : '' }}>
+                                                        {{ $faculty->facultyname }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label class="label font-semibold">CEO</label>
+                                            <select name="ceo_id" class="select select-bordered w-full">
+                                                @foreach($ceos as $ceo)
+                                                    <option value="{{ $ceo->id }}" {{ $travel->ceo_id == $ceo->id ? 'selected' : '' }}>
+                                                        {{ $ceo->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
                                 </form>
+
+                                <!-- Actions -->
+                                <div class="modal-action mt-6">
+                                    <button type="button" class="btn" onclick="document.getElementById('edit-travel-{{ $travel->id }}').close();">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" form="edit-form-{{ $travel->id }}" class="btn btn-success">
+                                        Save Changes
+                                    </button>
+                                </div>
                             </div>
                         </dialog>
 
 
                         <!-- CEO Review Modal -->
-                        <dialog id="ceo-approve-{{ $travel->id }}" class="modal">
-                            <div class="modal-box">
-                                <h3 class="font-bold text-lg mb-3">CEO Review</h3>
+                        <dialog id="ceo-review-{{ $travel->id }}" class="modal">
+                            <div class="modal-box relative bg-base-100 text-base-content shadow-lg border border-base-300">
+                                <button type="button" class="btn btn-sm btn-circle absolute right-2 top-2" 
+                                    onclick="document.getElementById('ceo-review-{{ $travel->id }}').close();">✕</button>
+                                <h3 class="font-bold text-lg mb-4 text-center">CEO Review</h3>
 
-                                <form id="ceo-form-{{ $travel->id }}" action="{{ route('travellist.ceo.approve', $travel->id) }}" method="POST" enctype="multipart/form-data">
+                                <form action="{{ route('travellist.ceo.approve', $travel->id) }}" method="POST">
                                     @csrf
-                                    @method('PUT')
-
-                                    <div class="form-control mb-3">
-                                        <label class="label">Signature (image)</label>
-                                        <input type="file" name="ceo_signature" accept="image/*" class="file-input file-input-bordered w-full" required />
-                                    </div>
 
                                     <div class="form-control mb-3">
                                         <label class="label font-semibold">Conditionalities</label>
                                         <select name="conditionalities" class="select select-bordered w-full" required>
-                                            <option value="">Select Conditionalities</option>
-                                            <option value="On Official Business">On Official Business</option>
-                                            <option value="On Official Time">On Official Time</option>
-                                            <option value="On Official Business and Time">On Official Business and Time</option>
+                                            <option disabled selected>Choose conditionalities</option>
+                                            <option value="On Official Business" 
+                                                {{ $travel->conditionalities === 'On Official Business' ? 'selected' : '' }}>
+                                                On Official Business
+                                            </option>
+                                            <option value="On Official Time" 
+                                                {{ $travel->conditionalities === 'On Official Time' ? 'selected' : '' }}>
+                                                On Official Time
+                                            </option>
+                                            <option value="On Official Business and Time" 
+                                                {{ $travel->conditionalities === 'On Official Business and Time' ? 'selected' : '' }}>
+                                                On Official Business and Time
+                                            </option>
                                         </select>
                                     </div>
-
-                                    <div class="form-control mb-3">
-                                        <label class="label">Notes (optional)</label>
-                                        <textarea name="ceo_notes" class="textarea textarea-bordered w-full" rows="3" placeholder="Reason for decline or notes..."></textarea>
-                                    </div>
-
-                                    <input type="hidden" name="status" id="ceo-status-{{ $travel->id }}" value="CEO Approved" />
 
                                     <div class="modal-action">
-                                        <button type="button" class="btn btn-success"
-                                            onclick="document.getElementById('ceo-status-{{ $travel->id }}').value='CEO Approved'; document.getElementById('ceo-form-{{ $travel->id }}').requestSubmit();">
-                                            Approve
+                                        <button type="button" class="btn" 
+                                            onclick="document.getElementById('ceo-review-{{ $travel->id }}').close();">
+                                            Cancel
                                         </button>
-
-                                        <button type="button" class="btn btn-error"
-                                            onclick="document.getElementById('ceo-status-{{ $travel->id }}').value='Declined'; document.getElementById('ceo-form-{{ $travel->id }}').requestSubmit();">
-                                            Decline
-                                        </button>
-
-                                        <button type="button" class="btn" onclick="document.getElementById('ceo-approve-{{ $travel->id }}').close();">Cancel</button>
+                                        <button type="submit" class="btn btn-success">Approve</button>
                                     </div>
                                 </form>
                             </div>
                         </dialog>
 
-                       <!-- Edit & Delete modals (Admin) -->
-                        <dialog id="edit-travel-{{ $travel->id }}" class="modal">
-                            <div class="modal-box bg-base-100 text-base-content shadow-lg border border-base-300">
-                                <h3 class="font-bold text-lg mb-4 text-center">Edit Travel</h3>
-
-                                <form id="edit-form-{{ $travel->id }}" action="{{ route('travellist.update', $travel->id) }}" method="POST">
-                                    @csrf
-                                    @method('PUT')
-
-                                    <div class="form-control mb-3">
-                                        <label class="label font-semibold">Date</label>
-                                        <input type="date" name="travel_date" value="{{ $travel->travel_date }}" 
-                                            class="input input-bordered w-full" required />
-                                    </div>
-
-                                    <div class="form-control mb-3">
-                                        <label class="label font-semibold">Requesting Parties (one per line)</label>
-                                        <textarea name="request_parties" class="textarea textarea-bordered w-full" rows="4">{{ $travel->requestParties->pluck('name')->implode("\n") }}</textarea>
-                                    </div>
-
-                                    <div class="form-control mb-3">
-                                        <label class="label font-semibold">Purpose</label>
-                                        <input type="text" name="purpose" value="{{ $travel->purpose }}" 
-                                            class="input input-bordered w-full" required />
-                                    </div>
-
-                                    <div class="form-control mb-3">
-                                        <label class="label font-semibold">Destination</label>
-                                        <input type="text" name="destination" value="{{ $travel->destination }}" 
-                                            class="input input-bordered w-full" required />
-                                    </div>
-
-                                    <div class="form-control mb-3">
-                                        <label class="label font-semibold">Transportation</label>
-                                        <select name="transportation_id" class="select select-bordered w-full" required>
-                                            @foreach($transportations as $transport)
-                                                <option value="{{ $transport->id }}" {{ $travel->transportation_id == $transport->id ? 'selected' : '' }}>
-                                                    {{ $transport->transportvehicle }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <div class="form-control mb-3">
-                                        <label class="label font-semibold">Conditionalities</label>
-                                        <select name="conditionalities" class="select select-bordered w-full" required>
-                                            <option value="On Official Business" {{ $travel->conditionalities == 'On Official Business' ? 'selected' : '' }}>On Official Business</option>
-                                            <option value="On Official Time" {{ $travel->conditionalities == 'On Official Time' ? 'selected' : '' }}>On Official Time</option>
-                                            <option value="On Official Business and Time" {{ $travel->conditionalities == 'On Official Business and Time' ? 'selected' : '' }}>On Official Business and Time</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="form-control mb-3">
-                                        <label class="label font-semibold">Approver</label>
-                                        <select name="faculty_id" class="select select-bordered w-full" required>
-                                            @foreach($faculties as $faculty)
-                                                <option value="{{ $faculty->id }}" {{ $travel->faculty_id == $faculty->id ? 'selected' : '' }}>
-                                                    {{ $faculty->facultyname }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <div class="form-control mb-3">
-                                        <label class="label font-semibold">Status</label>
-                                        <select name="status" class="select select-bordered w-full" required>
-                                            <option value="Pending" {{ $travel->status == 'Pending' ? 'selected' : '' }}>Pending</option>
-                                            <option value="Supervisor Approved" {{ $travel->status == 'Supervisor Approved' ? 'selected' : '' }}>Supervisor Approved</option>
-                                            <option value="CEO Approved" {{ $travel->status == 'CEO Approved' ? 'selected' : '' }}>CEO Approved</option>
-                                            <option value="Declined" {{ $travel->status == 'Declined' ? 'selected' : '' }}>Declined</option>
-                                        </select>
-                                    </div>
-                                </form>
-
-                                <div class="modal-action">
-                                    <form method="dialog"><button class="btn">Cancel</button></form>
-                                    <button type="submit" form="edit-form-{{ $travel->id }}" class="btn btn-success">Update</button>
-                                </div>
-                            </div>
-                        </dialog>
-
-
+                        <!-- Delete Modal -->
                         <dialog id="delete-travel-{{ $travel->id }}" class="modal">
-                            <div class="modal-box">
-                                <h3 class="font-bold text-lg mb-4">Delete Travel</h3>
+                            <div class="modal-box relative">
+                                <button type="button" class="btn btn-sm btn-circle absolute right-2 top-2" onclick="document.getElementById('delete-travel-{{ $travel->id }}').close();">✕</button>
+                                <h3 class="font-bold text-lg mb-4">Delete Travel Order</h3>
                                 <p>Are you sure you want to delete <b>{{ $travel->purpose }}</b>?</p>
                                 <div class="modal-action">
                                     <form method="dialog"><button class="btn">Cancel</button></form>
@@ -396,95 +414,133 @@
                                 </div>
                             </div>
                         </dialog>
-
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center">No travel records found.</td>
+                            <td colspan="9" class="text-center">No travel records found.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        <!-- Add Travel Modal -->
-        <dialog id="add-travel-modal" class="modal">
-            <div class="modal-box">
-                <h3 class="font-bold text-lg mb-4">Add Travel Order</h3>
-                <form id="add-form" action="{{ route('travellist.store') }}" method="POST">
-                    @csrf
+                {{-- Add Modal --}}
+                <dialog id="add-travel-modal" class="modal">
+                <div class="modal-box max-w-2xl relative">
+                    <!-- Close Button -->
+                    <button type="button" class="btn btn-sm btn-circle absolute right-2 top-2" 
+                        onclick="document.getElementById('add-travel-modal').close();">✕</button>
 
-                    <div class="form-control mb-3">
-                        <label class="label">Date</label>
-                        <input type="date" name="travel_date" class="input input-bordered w-full" required />
-                    </div>
+                    <!-- Title -->
+                    <h3 class="font-bold text-xl mb-4 text-center"> Request Travel Order</h3>
 
-                    <div class="form-control mb-3">
-                        <label class="label">Requesting Parties (one name per line)</label>
-                        <textarea name="request_parties" class="textarea textarea-bordered w-full" rows="4" placeholder="Enter names...&#10;One per line" required></textarea>
-                    </div>
-
-                    <div class="form-control mb-3">
-                        <label class="label">Purpose</label>
-                        <input type="text" name="purpose" class="input input-bordered w-full" required />
-                    </div>
-
-                    <div class="form-control mb-3">
-                        <label class="label">Destination</label>
-                        <input type="text" name="destination" class="input input-bordered w-full" required />
-                    </div>
-
-                    <div class="form-control mb-3">
-                        <label class="label">Transportation</label>
-                        <select name="transportation_id" class="select select-bordered w-full" required>
-                            <option disabled selected>Choose transportation</option>
-                            @foreach($transportations as $transport)
-                                <option value="{{ $transport->id }}">{{ $transport->transportvehicle }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    @if(auth()->user()->role === 'CEO')
-                        <div class="form-control mb-3">
-                            <label class="label">Conditionalities</label>
-                            <select name="conditionalities" class="select select-bordered w-full" required>
-                                <option disabled selected>Choose Conditionalities</option>
-                                <option value="On Official Business">On Official Business</option>
-                                <option value="On Official Time">On Official Time</option>
-                                <option value="On Official Business and Time">On Official Business and Time</option>
-                            </select>
+                    <!-- Validation Errors -->
+                    @if($errors->any())
+                        <div class="alert alert-error mb-4">
+                            <ul class="list-disc pl-5 text-sm">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                     @endif
 
-                    <div class="form-control mb-3">
-                        <label class="label">Approver</label>
-                        <select name="faculty_id" class="select select-bordered w-full" required>
-                            <option disabled selected>Choose Approver</option>
-                            @foreach($faculties as $faculty)
-                                <option value="{{ $faculty->id }}">{{ $faculty->facultyname }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </form>
+                    <!-- Form -->
+                    <form id="add-form" action="{{ route('travellist.store') }}" method="POST" class="space-y-4">
+                        @csrf
 
-                <div class="modal-action">
-                    <form method="dialog"><button class="btn">Cancel</button></form>
-                    <button type="submit" form="add-form" class="btn btn-success">Save</button>
+                        <!-- Dates Section -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-control">
+                                <label class="label font-semibold">Date From</label>
+                                <input type="date" name="travel_from" value="{{ old('travel_from') }}" class="input input-bordered w-full" required />
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label font-semibold">Date To</label>
+                                <input type="date" name="travel_to" value="{{ old('travel_to') }}" class="input input-bordered w-full" required />
+                            </div>
+                        </div>
+
+                        <!-- Requesting Parties -->
+                        <div class="form-control">
+                            <label class="label font-semibold">Requesting Parties</label>
+                            <textarea name="request_parties" class="textarea textarea-bordered w-full" rows="3" placeholder="Enter one name per line..." required>{{ old('request_parties') }}</textarea>
+                        </div>
+
+                        <!-- Purpose & Destination -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-control">
+                                <label class="label font-semibold">Purpose</label>
+                                <input type="text" name="purpose" value="{{ old('purpose') }}" class="input input-bordered w-full" placeholder="e.g., Official meeting" required />
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label font-semibold">Destination</label>
+                                <input type="text" name="destination" value="{{ old('destination') }}" class="input input-bordered w-full" placeholder="e.g., Manila" required />
+                            </div>
+                        </div>
+
+                        <!-- Transportation -->
+                        <div class="form-control">
+                            <label class="label font-semibold">Transportation</label>
+                            <select name="transportation_id" class="select select-bordered w-full" required>
+                                <option value="" selected disabled>Choose transportation</option>
+                                @foreach($transportations as $transport)
+                                    <option value="{{ $transport->id }}" {{ old('transportation_id') == $transport->id ? 'selected' : '' }}>
+                                        {{ $transport->transportvehicle }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Approvers -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-control">
+                                <label class="label font-semibold">Recommending Approval</label>
+                                <select name="faculty_id" class="select select-bordered w-full" required>
+                                    <option value="" selected disabled>Choose Approver</option>
+                                    @foreach($faculties as $faculty)
+                                        <option value="{{ $faculty->id }}" {{ old('faculty_id') == $faculty->id ? 'selected' : '' }}>
+                                            {{ $faculty->facultyname }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label font-semibold">CEO</label>
+                                <select name="ceo_id" class="select select-bordered w-full">
+                                    <option value="" selected disabled>Choose CEO</option>
+                                    @foreach($ceos as $ceo)
+                                        <option value="{{ $ceo->id }}" {{ old('ceo_id') == $ceo->id ? 'selected' : '' }}>
+                                            {{ $ceo->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="modal-action">
+                            <button type="button" class="btn" onclick="document.getElementById('add-travel-modal').close();">Cancel</button>
+                            <button type="submit" class="btn btn-success">Save</button>
+                        </div>
+                    </form>
                 </div>
-            </div>
-        </dialog>
+            </dialog>
+
+
 
     </div>
 
-    <!-- JS -->
     <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const selectAll = document.getElementById("select-all");
-        if (selectAll) {
-            const checkboxes = document.querySelectorAll(".row-checkbox");
-            selectAll.addEventListener("change", function () {
-                checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        document.addEventListener('DOMContentLoaded', function () {
+            const modals = document.querySelectorAll('dialog.modal');
+            modals.forEach(modal => {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) modal.close();
+                });
             });
-        }
-    });
+        });
     </script>
 </x-app-layout>

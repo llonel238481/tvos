@@ -29,7 +29,25 @@ class User extends Authenticatable
         return $this->hasOne(Employees::class);
     }
 
-    
+     public function faculty()
+    {
+        return $this->hasOne(Faculty::class);
+    }
+
+    public function ceo()
+    {
+        return $this->hasOne(CEO::class);
+    }
+
+     // Helper to get signature based on role
+    public function signature()
+    {
+        return match($this->role) {
+            'Supervisor', 'Employee' => $this->faculty?->signature,
+            'CEO' => $this->ceo?->signature,
+            default => null,
+        };
+    }
 
     /**
      * The attributes that should be hidden for serialization.

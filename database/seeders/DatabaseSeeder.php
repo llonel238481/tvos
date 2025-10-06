@@ -22,24 +22,7 @@ class DatabaseSeeder extends Seeder
                 'role' => 'Admin',
                 'password' => 'password123',
             ],
-            [
-                'name' => 'Employee User',
-                'email' => 'employee@example.com',
-                'role' => 'Employee',
-                'password' => 'password123',
-            ],
-            [
-                'name' => 'CEO User',
-                'email' => 'ceo@example.com',
-                'role' => 'CEO',
-                'password' => 'password123',
-            ],
-            [
-                'name' => 'Supervisor User',
-                'email' => 'supervisor@example.com',
-                'role' => 'Supervisor',
-                'password' => 'password123',
-            ],
+
         ];
 
         foreach ($roles as $userData) {
