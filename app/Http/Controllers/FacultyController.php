@@ -122,7 +122,7 @@ class FacultyController extends Controller
 
     public function destroy($id)
     {
-        $faculty = \App\Models\Faculty::findOrFail($id);
+        $faculty =Faculty::findOrFail($id);
 
         // ✅ Delete linked user account if exists
         if ($faculty->user_id) {

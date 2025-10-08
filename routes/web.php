@@ -75,11 +75,35 @@ Route::resource('ceos', CEOController::class);
 Route::resource('notifications', NotificationController::class);
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
-    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-    Route::delete('/notifications', [NotificationController::class, 'clearAll'])->name('notifications.clear');
+
+    // List notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])
+        ->name('notifications.index');
+
+    // Create / store notification
+    Route::post('/notifications', [NotificationController::class, 'store'])
+        ->name('notifications.store');
+
+    // Mark a single notification as read
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])
+        ->name('notifications.read');
+
+    // Mark all notifications as read
+    Route::patch('/notifications/mark-all', [NotificationController::class, 'markAllAsRead'])
+        ->name('notifications.markAllAsRead');
+
+
+    // Delete a single notification
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])
+        ->name('notifications.destroy');
+
+    // Clear all notifications
+    Route::delete('/notifications', [NotificationController::class, 'clearAll'])
+        ->name('notifications.clear');
 });
+
+Route::patch('/notifications/{id}/read-ajax', [NotificationController::class, 'markAsReadAjax'])
+    ->name('notifications.read.ajax');
+
 
 require __DIR__.'/auth.php';

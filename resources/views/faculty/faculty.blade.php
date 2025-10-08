@@ -4,9 +4,23 @@
 
         {{-- Success Message --}}
         @if(session('success'))
-            <div class="alert alert-success shadow-lg mb-4">
+            <div id="success-alert" class="alert alert-success shadow-lg mb-4">
                 <span>{{ session('success') }}</span>
             </div>
+
+            <script>
+                // Wait 3 seconds then fade out
+                setTimeout(() => {
+                    const alert = document.getElementById('success-alert');
+                    if(alert) {
+                        alert.style.transition = "opacity 0.5s ease";
+                        alert.style.opacity = '0';
+                        // Optional: remove from DOM after fading
+                        setTimeout(() => alert.remove(), 500);
+                    }
+                }, 3000); // 3000ms = 3 seconds
+            </script>
+        @endif
 
             {{-- Auto-close Add Modal --}}
             <script>
@@ -15,7 +29,7 @@
                     if(addModal) addModal.checked = false;
                 });
             </script>
-        @endif
+        
 
         {{-- Validation Errors --}}
         @if($errors->any())

@@ -10,26 +10,26 @@ class NotificationController extends Controller
 {
     // Show notifications for the logged-in user
     public function index()
-{
-    $user = Auth::user();
+    {
+        $user = Auth::user();
 
-    $notifications = Notification::query()
-        ->where(function ($query) use ($user) {
-            $query->where('user_id', $user->id)
-                  ->orWhere('role', $user->role);
-        })
-        ->orderBy('created_at', 'desc')
-        ->get()
-        ->unique('id'); // makes sure no duplicates if a row somehow matches both conditions
+        $notifications = Notification::query()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhere('role', $user->role);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->unique('id'); // makes sure no duplicates if a row somehow matches both conditions
 
-    return view('notifications', compact('notifications'));
-}
+        return view('notifications', compact('notifications'));
+    }
 
-public static function deleteRelatedNotifications($travelOrderId)
-{
-    Notification::where('related_id', $travelOrderId)
-        ->delete();
-}
+    public static function deleteRelatedNotifications($travelOrderId)
+    {
+        Notification::where('related_id', $travelOrderId)
+            ->delete();
+    }
 
 
     public static function send($title, $message = null, $userId = null, $role = null)
@@ -57,6 +57,30 @@ public static function deleteRelatedNotifications($travelOrderId)
         return back();
     }
 
+    // Mark all notifications as read via AJAX
+    public function markAllAsRead(Request $request)
+    {
+        $user = Auth::user();
+
+        $updated = Notification::where(function ($query) use ($user) {
+            $query->where('user_id', $user->id)
+                ->orWhere('role', $user->role);
+        })->update(['is_read' => true]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'updated_count' => $updated,
+                'unread_count' => 0
+            ]);
+        }
+
+        return back()->with('success', 'All notifications marked as read.');
+    }
+
+
+
+
     // Admin or system can send notifications
     public function store(Request $request)
     {
@@ -71,6 +95,29 @@ public static function deleteRelatedNotifications($travelOrderId)
 
         return back()->with('success', 'Notification sent!');
     }
+
+    // Mark a single notification as read via AJAX
+    public function markAsReadAjax($id)
+    {
+        $notification = Notification::findOrFail($id);
+
+        if ($notification->user_id !== Auth::id() && $notification->role !== Auth::user()->role) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $notification->update(['is_read' => true]);
+
+        $unreadCount = Notification::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'notification_id' => $id,
+            'unread_count' => $unreadCount
+        ]);
+    }
+
 
     public function destroy($id)
     {

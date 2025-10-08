@@ -42,7 +42,8 @@ class EmployeesController extends Controller
         ]);
 
         // 🧠 Generate full name
-        $fullName = "{$validated['firstname']} {$validated['middlename']} {$validated['lastname']}";
+        $middleInitial = !empty($validated['middlename']) ? strtoupper($validated['middlename'][0]) . '.' : '';
+        $fullName = "{$validated['firstname']} {$middleInitial} {$validated['lastname']}";
 
         // 🧠 Create linked User
         $user = User::create([

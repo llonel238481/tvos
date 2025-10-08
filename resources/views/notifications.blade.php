@@ -1,15 +1,28 @@
 <x-app-layout>
     <div class="p-6">
-        <h1 class="text-2xl font-bold mb-4">Notifications Panel</h1>
+        <h1 class="text-2xl font-bold mb-4">Notifications</h1>
 
-        {{-- Success Message --}}
+        {{-- ✅ Success Message --}}
         @if(session('success'))
-            <div class="alert alert-success shadow-lg mb-4">
+            <div id="success-alert" class="alert alert-success shadow-lg mb-4">
                 <span>{{ session('success') }}</span>
             </div>
+
+            <script>
+                // Wait 3 seconds then fade out
+                setTimeout(() => {
+                    const alert = document.getElementById('success-alert');
+                    if(alert) {
+                        alert.style.transition = "opacity 0.5s ease";
+                        alert.style.opacity = '0';
+                        // Optional: remove from DOM after fading
+                        setTimeout(() => alert.remove(), 500);
+                    }
+                }, 3000); // 3000ms = 3 seconds
+            </script>
         @endif
 
-        {{-- Validation Errors --}}
+        {{-- ❌ Validation Errors --}}
         @if($errors->any())
             <div class="alert alert-error shadow-lg mb-4">
                 <ul class="list-disc pl-5">
@@ -20,134 +33,71 @@
             </div>
         @endif
 
-        {{-- Search and Add --}}
-        <div class="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3">
-            <form action="{{ route('notifications.index') }}" method="GET" class="flex gap-2 flex-wrap w-full sm:w-auto">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search notifications..." class="input input-bordered w-full sm:w-64">
-                <button type="submit" class="btn btn-success">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-                </button>
-            </form>
-            
-        </div>
+        {{-- 📜 Notification Feed --}}
+        <div class="space-y-3">
+            @forelse($notifications as $notification)
+                <div class="flex items-start justify-between p-4 bg-base-200 rounded-lg shadow hover:bg-base-300 transition">
+                    <div class="flex gap-3">
+                        {{-- 🔵 Icon (Unread / Read) --}}
+                        @if($notification->status === 'unread')
+                            <div class="mt-1 w-3 h-3 bg-blue-500 rounded-full"></div>
+                        @else
+                            <div class="mt-1 w-3 h-3 bg-gray-400 rounded-full"></div>
+                        @endif
 
-        {{-- Notifications Table --}}
-        <div class="overflow-x-auto">
-            <table class="table w-full">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" id="select-all" class="checkbox"></th>
-                        <th>#</th>
-                        <th>Title</th>
-                        <th>Message</th>
-                        <th>Status</th>
-                        <th>Created At</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($notifications as $index => $notification)
-                        <tr>
-                            <td><input type="checkbox" class="checkbox row-checkbox"></td>
-                            <td>{{ $index + 1 }}</td>
-                            <td>{{ $notification->title }}</td>
-                            <td>{{ Str::limit($notification->message, 50) }}</td>
-                            <td>
-                                @if($notification->status === 'unread')
-                                    <span class="badge badge-warning">Unread</span>
-                                @else
-                                    <span class="badge badge-success">Read</span>
-                                @endif
-                            </td>
-                            <td>{{ $notification->created_at->format('M d, Y h:i A') }}</td>
-                            <td class="flex gap-2">
-                                
-                                <label for="delete-notification-{{ $notification->id }}" class="btn btn-sm btn-error">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash2-icon lucide-trash-2"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                </label>
-                            </td>
-                        </tr>
-
-                       
-
-                        {{-- Delete Modal --}}
-                        <input type="checkbox" id="delete-notification-{{ $notification->id }}" class="modal-toggle">
-                        <div class="modal">
-                            <div class="modal-box relative">
-                                <label for="delete-notification-{{ $notification->id }}" class="btn btn-sm btn-circle absolute right-2 top-2">✕</label>
-                                <h3 class="font-bold text-lg mb-4">Delete Notification</h3>
-                                <p>Are you sure you want to delete <b>{{ $notification->title }}</b>?</p>
-                                <div class="modal-action flex gap-2">
-                                    <label for="delete-notification-{{ $notification->id }}" class="btn">Cancel</label>
-                                    <form action="{{ route('notifications.destroy', $notification->id) }}" method="POST">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-error">Delete</button>
-                                    </form>
-                                </div>
-                            </div>
+                        {{-- 📝 Content --}}
+                        <div>
+                            <p class="font-semibold">{{ $notification->title }}</p>
+                            <p class="text-sm text-gray-600">{{ $notification->message }}</p>
+                            <p class="text-xs text-gray-400 mt-1">
+                                {{ $notification->created_at->diffForHumans() }}
+                            </p>
                         </div>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="text-center">No notifications found.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                    </div>
 
-        {{-- Add Notification Modal --}}
-        <input type="checkbox" id="add-notification-modal" class="modal-toggle">
-        <div class="modal">
-            <div class="modal-box relative">
-                <label for="add-notification-modal" class="btn btn-sm btn-circle absolute right-2 top-2">✕</label>
-                <h3 class="font-bold text-lg mb-4">Add Notification</h3>
-                <form action="{{ route('notifications.store') }}" method="POST">
-                    @csrf
-                    <div class="form-control mb-3">
-                        <label class="label">Title</label>
-                        <input type="text" name="title" class="input input-bordered w-full" required>
+                    {{-- 🗑 Delete Button --}}
+                    <label for="delete-notification-{{ $notification->id }}" class="btn btn-sm btn-error tooltip" data-tip="Delete">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2">
+                            <path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </label>
+                </div>
+
+                {{-- 🧾 Delete Modal --}}
+                <input type="checkbox" id="delete-notification-{{ $notification->id }}" class="modal-toggle">
+                <div class="modal">
+                    <div class="modal-box relative">
+                        <label for="delete-notification-{{ $notification->id }}" class="btn btn-sm btn-circle absolute right-2 top-2">✕</label>
+                        <h3 class="font-bold text-lg mb-4">Delete Notification</h3>
+                        <p>Are you sure you want to delete <b>{{ $notification->title }}</b>?</p>
+                        <div class="modal-action flex gap-2">
+                            <label for="delete-notification-{{ $notification->id }}" class="btn">Cancel</label>
+                            <form action="{{ route('notifications.destroy', $notification->id) }}" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-error">Delete</button>
+                            </form>
+                        </div>
                     </div>
-                    <div class="form-control mb-3">
-                        <label class="label">Message</label>
-                        <textarea name="message" class="textarea textarea-bordered w-full" rows="3" required></textarea>
-                    </div>
-                    <div class="form-control mb-3">
-                        <label class="label">Status</label>
-                        <select name="status" class="select select-bordered w-full">
-                            <option value="unread">Unread</option>
-                            <option value="read">Read</option>
-                        </select>
-                    </div>
-                    <div class="modal-action">
-                        <label for="add-notification-modal" class="btn">Cancel</label>
-                        <button type="submit" class="btn btn-success">Save</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+            @empty
+                <div class="p-4 text-center text-gray-500 bg-base-200 rounded-lg">
+                    No notifications found.
+                </div>
+            @endforelse
         </div>
     </div>
 
-    {{-- Scripts --}}
+    {{-- 🧠 Script to auto-close modal when clicking outside --}}
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const selectAll = document.getElementById("select-all");
-            const checkboxes = document.querySelectorAll(".row-checkbox");
-
-            selectAll?.addEventListener("change", () => {
-                checkboxes.forEach(cb => cb.checked = selectAll.checked);
-            });
-
+        document.addEventListener('click', (e) => {
             document.querySelectorAll('.modal').forEach(modal => {
+                const modalBox = modal.querySelector('.modal-box');
                 const checkbox = modal.previousElementSibling;
-                if (!checkbox) return;
 
-                modal.addEventListener('click', e => {
-                    if (!e.target.closest('.modal-box')) {
-                        checkbox.checked = false;
-                    }
-                });
-                modal.querySelector('.modal-box').addEventListener('click', e => e.stopPropagation());
+                if (checkbox?.checked && !modalBox.contains(e.target) && modal.contains(e.target)) {
+                    checkbox.checked = false;
+                }
             });
         });
     </script>
