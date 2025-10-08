@@ -8,176 +8,203 @@
                 <p class="text-sm text-gray-500">Overview of travel order activity</p>
             </div>
 
-            <!-- Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Combined Dashboard Card (Stats Top + Recent Bottom) -->
                 <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body">
-                        <div class="text-sm text-gray-500">Total Travel Orders</div>
-                        <div class="text-3xl font-bold text-emerald-600">{{ $totalTravelOrders }}</div>
-                        <div class="text-xs text-gray-400">As of {{ now()->format('F d, Y') }}</div>
-                    </div>
-                </div>
+                    <div class="card-body space-y-8">
+                        <!-- 📊 Stats Section -->
+                        <div>
+                            <h2 class="font-semibold text-lg mb-4">Travel Statistics</h2>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <!-- Total Orders -->
+                                <div class="stats shadow-lg bg-base-100">
+                                    <div class="stat">
+                                        <div class="stat-title">Total Orders</div>
+                                        <div class="stat-value text-primary">{{ $totalTravelOrders }}</div>
+                                        <div class="stat-desc">As of {{ now()->format('F d, Y') }}</div>
+                                    </div>
+                                </div>
 
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body">
-                        <div class="text-sm text-gray-500">Cancelled Orders</div>
-                        <div class="text-3xl font-bold text-red-500">{{ $cancelledTravelOrders }}</div>
-                        <div class="text-xs text-gray-400">Not approved</div>
-                    </div>
-                </div>
+                                <div class="stats shadow-lg bg-base-100">
+                                    <div class="stat">
+                                        <div class="stat-title">Cancelled</div>
+                                        <div class="stat-value text-error">{{ $cancelledTravelOrders  }}</div>
+                                        <div class="stat-desc">As of {{ now()->format('F d, Y') }}</div>
+                                    </div>
+                                </div>
 
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body">
-                        <div class="text-sm text-gray-500">Approved Orders</div>
-                        <div class="text-3xl font-bold text-emerald-600">{{ $approvedTravelOrders }}</div>
-                        <div class="text-xs text-gray-400">Already approved</div>
-                    </div>
-                </div>
-            </div>
+                                <div class="stats shadow-lg bg-base-100">
+                                    <div class="stat">
+                                        <div class="stat-title">Approved</div>
+                                        <div class="stat-value text-success">{{ $approvedTravelOrders  }}</div>
+                                        <div class="stat-desc">Approved orders</div>
+                                    </div>
+                                </div>
 
-            <!-- Alerts + Quick Actions -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                <!-- Alerts -->
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body space-y-3">
-                        <h2 class="font-semibold text-lg">Travel Alerts</h2>
-                        @if($pendingTravelOrders > 0)
-                            <div class="p-3 rounded-lg bg-yellow-100 text-yellow-800 text-sm">
-                                {{ $pendingTravelOrders }} pending travel orders awaiting approval.
                             </div>
-                        @endif
+                        </div>
 
-                        @if($approvedTravelOrders > 0)
-                            <div class="p-3 rounded-lg bg-emerald-100 text-emerald-800 text-sm">
-                                {{ $approvedTravelOrders }} travel orders approved and ready for processing.
+                       <!-- 📝 Recent Activity Section -->
+                        <div>
+                            <h2 class="font-semibold text-lg mb-4">Recent Activity</h2>
+                            <div class="space-y-4 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300">
+                                @php
+                                    $recentTravels = \App\Models\Travel_Lists::latest()->take(3)->get();
+                                @endphp
+
+                                @forelse ($recentTravels as $travel)
+                                    <div class="flex items-start space-x-3">
+                                        <!-- Timeline Dot -->
+                                        <div class="mt-2 w-3 h-3 rounded-full 
+                                            @if($travel->status == 'Pending') bg-yellow-500
+                                            @elseif($travel->status == 'Approved') bg-emerald-600
+                                            @elseif($travel->status == 'Cancelled') bg-red-500
+                                            @else bg-gray-400
+                                            @endif">
+                                        </div>
+
+                                        <!-- Activity Content -->
+                                        <div class="flex-1">
+                                            <div class="flex justify-between items-start">
+                                                <p class="font-medium text-gray-800 leading-tight">{{ $travel->purpose }}</p>
+                                                <span class="text-xs text-gray-500">
+                                                    {{ \Carbon\Carbon::parse($travel->travel_date)->format('M d, Y') }}
+                                                </span>
+                                            </div>
+                                            <p class="text-sm text-gray-600">
+                                                Destination: <span class="font-semibold">{{ $travel->destination }}</span>
+                                            </p>
+                                            <span class="inline-block text-xs mt-1 px-2 py-1 rounded-full 
+                                                @if($travel->status == 'Pending') bg-yellow-100 text-yellow-800
+                                                @elseif($travel->status == 'Approved') bg-emerald-100 text-emerald-800
+                                                @elseif($travel->status == 'Cancelled') bg-red-100 text-red-800
+                                                @else bg-gray-100 text-gray-800
+                                                @endif">
+                                                {{ $travel->status }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="text-center text-gray-500 py-4">
+                                        No recent travel activity found
+                                    </div>
+                                @endforelse
                             </div>
-                        @endif
 
-                        @if($pendingTravelOrders == 0 && $approvedTravelOrders == 0)
-                            <div class="p-3 rounded-lg bg-gray-100 text-gray-600 text-sm">
-                                No travel alerts at the moment.
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="card bg-base-100 shadow-sm border border-base-300">
-                    <div class="card-body space-y-3">
-                        <h2 class="font-semibold text-lg">Quick Actions</h2>
-                        <div class="grid gap-2">
-                            <a href="{{ route('travellist.index') }}" class="btn bg-emerald-600 hover:bg-emerald-700 text-white w-full">
-                                View All Travel Orders
-                            </a>
-                            <a href="{{ route('transportation.index') }}" class="btn bg-emerald-600 hover:bg-emerald-700 text-white w-full">
-                                Manage Transportation
-                            </a>
-                            <a href="{{ route('departments.index') }}" class="btn bg-emerald-600 hover:bg-emerald-700 text-white w-full">
-                                Manage Departments
-                            </a>
+                            <!-- View All Button -->
+                           <!-- View All Link -->
+                            @if(\App\Models\Travel_Lists::count() > 3)
+                                <div class="text-center mt-2">
+                                    <a href="{{ route('travellist.index') }}" class="text-blue-600 hover:underline text-sm">
+                                        View All
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
 
-            </div>
+                <!-- Chart (Left) + Quick Actions (Right, shorter) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- 📊 Chart Card (Left, 2 columns wide) -->
+                    <div class="card bg-base-100 shadow-sm border border-base-300 lg:col-span-2">
+                        <div class="card-body">
+                            <h2 class="font-semibold text-lg mb-4">Monthly Travel Orders</h2>
+                            <div id="apexChart" class="w-full h-64 md:h-80"></div>
+                        </div>
+                    </div>
 
-            <!-- Chart -->
-            <div class="card bg-base-100 shadow-sm border border-base-300">
-                <div class="card-body">
-                    <h2 class="font-semibold text-lg mb-4">Monthly Travel Orders</h2>
-                    <div class="w-full h-64 md:h-96">
-                        <canvas id="travelChart"></canvas>
+                    <!-- ⚡ Quick Actions Card (Right, auto height) -->
+                    <div class="flex lg:items-start">
+                        <div class="card bg-base-100 shadow-sm border border-base-300 w-full lg:w-80">
+                            <div class="card-body">
+                                <h2 class="font-semibold text-lg mb-4">Quick Actions</h2>
+                                <div class="grid gap-2">
+                                    <a href="{{ route('travellist.index') }}" class="btn bg-emerald-600 hover:bg-emerald-700 text-white w-full">
+                                        View All Travel Orders
+                                    </a>
+                                    <a href="{{ route('transportation.index') }}" class="btn bg-emerald-600 hover:bg-emerald-700 text-white w-full">
+                                        Manage Transportation
+                                    </a>
+                                    <a href="{{ route('departments.index') }}" class="btn bg-emerald-600 hover:bg-emerald-700 text-white w-full">
+                                        Manage Departments
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <script>
+
+                <!-- ApexCharts -->
+                <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+                <script>
                 document.addEventListener('DOMContentLoaded', () => {
-                    const ctx = document.getElementById('travelChart').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: [
-                                'January','February','March','April','May','June',
-                                'July','August','September','October','November','December'
-                            ],
-                            datasets: [{
-                                label: 'Travel Orders',
-                                data: [
-                                    {{ $janOrders ?? 0 }}, {{ $febOrders ?? 0 }}, {{ $marOrders ?? 0 }},
-                                    {{ $aprOrders ?? 0 }}, {{ $mayOrders ?? 0 }}, {{ $junOrders ?? 0 }},
-                                    {{ $julOrders ?? 0 }}, {{ $augOrders ?? 0 }}, {{ $sepOrders ?? 0 }},
-                                    {{ $octOrders ?? 0 }}, {{ $novOrders ?? 0 }}, {{ $decOrders ?? 0 }}
-                                ],
-                                borderColor: '#059669',
-                                backgroundColor: 'rgba(5, 150, 105, 0.15)',
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.3,
-                                pointRadius: 4
-                            }]
+                    const options = {
+                        chart: {
+                            type: 'area',
+                            height: 320,
+                            toolbar: { show: false },
+                            zoom: { enabled: false },
+                            fontFamily: 'inherit'
                         },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false }
-                            },
-                            scales: {
-                                y: { beginAtZero: true, ticks: { stepSize: 5 } }
+                        series: [{
+                            name: 'Travel Orders',
+                            data: [
+                                {{ $janOrders }},
+                                {{ $febOrders }},
+                                {{ $marOrders }},
+                                {{ $aprOrders }},
+                                {{ $mayOrders }},
+                                {{ $junOrders }},
+                                {{ $julOrders }},
+                                {{ $augOrders }},
+                                {{ $sepOrders }},
+                                {{ $octOrders }},
+                                {{ $novOrders }},
+                                {{ $decOrders }}
+                            ]
+                        }],
+                        xaxis: {
+                            categories: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+                            labels: { style: { colors: '#6b7280' } }
+                        },
+                        yaxis: {
+                            labels: { style: { colors: '#6b7280' } },
+                            min: 0
+                        },
+                        stroke: {
+                            curve: 'smooth',
+                            width: 3
+                        },
+                        colors: ['#10b981'],
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: 0.4,
+                                opacityTo: 0,
+                                stops: [0, 90, 100]
                             }
+                        },
+                        dataLabels: { enabled: false },
+                        grid: {
+                            borderColor: '#e5e7eb',
+                            strokeDashArray: 4
+                        },
+                        tooltip: {
+                            theme: 'light'
                         }
-                    });
+                    };
+
+                    const chart = new ApexCharts(document.querySelector("#apexChart"), options);
+                    chart.render();
                 });
-            </script>
+                </script>
 
-            <!-- Recent Activity -->
-            <div class="card bg-base-100 shadow-sm border border-base-300">
-                <div class="card-body">
-                    <h2 class="font-semibold text-lg mb-4">Recent Activity</h2>
-                    <div class="overflow-x-auto">
-                        <table class="table text-sm">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th>#</th>
-                                    <th>Purpose</th>
-                                    <th>Destination</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (\App\Models\Travel_Lists::latest()->take(5)->get() as $travel)
-                                    <tr>
-                                        <td>{{ $travel->id }}</td>
-                                        <td>{{ $travel->purpose }}</td>
-                                        <td>{{ $travel->destination }}</td>
-                                        <td>{{ $travel->travel_date }}</td>
-                                        <td>
-                                            <span class="badge 
-                                                @if($travel->status == 'Pending') badge-warning
-                                                @elseif($travel->status == 'Approved') badge-success
-                                                @elseif($travel->status == 'Cancelled') badge-error
-                                                @else badge-neutral
-                                                @endif">
-                                                {{ $travel->status }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @endforeach
 
-                                @if(\App\Models\Travel_Lists::count() === 0)
-                                    <tr>
-                                        <td colspan="5" class="text-center text-gray-500 py-4">No travel records found</td>
-                                    </tr>
-                                @endif
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+
+
+                
 
         </div>
     </div>

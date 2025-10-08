@@ -4,9 +4,22 @@
 
         <!-- Success Message -->
         @if(session('success'))
-            <div class="alert alert-success shadow-lg mb-4">
+            <div id="success-alert" class="alert alert-success shadow-lg mb-4">
                 <span>{{ session('success') }}</span>
             </div>
+
+            <script>
+                // Wait 3 seconds then fade out
+                setTimeout(() => {
+                    const alert = document.getElementById('success-alert');
+                    if(alert) {
+                        alert.style.transition = "opacity 0.5s ease";
+                        alert.style.opacity = '0';
+                        // Optional: remove from DOM after fading
+                        setTimeout(() => alert.remove(), 500);
+                    }
+                }, 3000); // 3000ms = 3 seconds
+            </script>
         @endif
 
         <!-- Top Controls -->
@@ -20,10 +33,8 @@
                     <select name="status" class="select select-bordered w-full">
                         <option value="">All Status</option>
                         <option value="Pending" {{ request('status') == 'Pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="Supervisor Approved" {{ request('status') == 'Supervisor Approved' ? 'selected' : '' }}>Supervisor Approved</option>
-                        <option value="CEO Approved" {{ request('status') == 'CEO Approved' ? 'selected' : '' }}>CEO Approved</option>
-                        <option value="Declined" {{ request('status') == 'Declined' ? 'selected' : '' }}>Declined</option>
-                        <option value="Completed" {{ request('status') == 'Completed' ? 'selected' : '' }}>Completed</option>
+                        <option value="Recommended for Approval" {{ request('status') == 'Recommended for Approval' ? 'selected' : '' }}>Recommended for Approval</option>
+                        <option value="CEO Approved" {{ request('status') == 'CEO Approved' ? 'selected' : '' }}>CEO Approved</option>       
                     </select>
                 </div>
 
@@ -65,15 +76,16 @@
                             <!-- Requesting Parties -->
                             <td class="whitespace-nowrap">
                                 @if($travel->requestParties && $travel->requestParties->isNotEmpty())
-                                    <ul class="list-disc pl-4">
+                                    <ol class="list-decimal pl-5">
                                         @foreach($travel->requestParties as $party)
                                             <li>{{ $party->name }}</li>
                                         @endforeach
-                                    </ul>
+                                    </ol>
                                 @else
                                     <span class="italic text-gray-500">None</span>
                                 @endif
                             </td>
+
 
                             <!-- Destination -->
                             <td class="whitespace-nowrap">{{ $travel->destination }}</td>
@@ -150,7 +162,7 @@
                                     <div class="md:col-span-2 p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100">
                                         <p class="font-semibold mb-1">Requesting Parties</p>
                                         @if($travel->requestParties && $travel->requestParties->isNotEmpty())
-                                            <ul class="list-disc pl-5 space-y-1">
+                                            <ul class="list-decimal pl-5 space-y-1">
                                                 @foreach($travel->requestParties as $party)
                                                     <li>{{ $party->name }}</li>
                                                 @endforeach
@@ -189,21 +201,14 @@
                                         </div>
                                     </div>
 
-                                    <div class="md:col-span-2 p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100">
-                                        <p class="font-semibold">Approver</p>
-                                        <p>{{ $travel->faculty->facultyname ?? 'No Approver' }}</p>
-                                    </div>
-
-                                    <div class="md:col-span-2 p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100">
-                                        <p class="font-semibold">CEO</p>
-                                        <p>{{ $travel->ceo->name ?? 'No CEO Assigned' }}</p>
-                                    </div>
-
                                     <!-- Signatures -->
                                     <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                                        
                                         <!-- Supervisor Signature -->
                                         <div class="p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100 text-center">
-                                            <p class="font-semibold mb-2">Supervisor Signature</p>
+                                            <p class="font-semibold text-left mb-3">Recommend Approver:</p>
+                                            <p class="underline">{{ $travel->faculty->facultyname ?? 'No Approver' }}</p>
+                                            <p class="font-semibold mt-2 mb-2 text-left">Supervisor Signature</p>
                                             @if($travel->supervisor_signature)
                                                 <img src="{{ asset('storage/' . $travel->supervisor_signature) }}" 
                                                     alt="Supervisor Signature" 
@@ -215,7 +220,9 @@
 
                                         <!-- CEO Signature -->
                                         <div class="p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100 text-center">
-                                            <p class="font-semibold mb-2">CEO Signature</p>
+                                            <p class="font-semibold text-left">CEO: </p>
+                                            <p class="underline">{{ $travel->ceo->name ?? 'No CEO Assigned' }}</p>
+                                            <p class="font-semibold mt-2 mb-2 text-left">CEO Signature</p>
                                             @if($travel->ceo_signature)
                                                 <img src="{{ asset('storage/' . $travel->ceo_signature) }}" 
                                                     alt="CEO Signature" 
@@ -462,10 +469,76 @@
                         </div>
 
                         <!-- Requesting Parties -->
-                        <div class="form-control">
+                        <div class="form-control w-full">
                             <label class="label font-semibold">Requesting Parties</label>
-                            <textarea name="request_parties" class="textarea textarea-bordered w-full" rows="3" placeholder="Enter one name per line..." required>{{ old('request_parties') }}</textarea>
+                            <div id="request-parties-container" class="flex flex-wrap gap-2 border rounded p-2 min-h-[48px]">
+                                <!-- Chips will appear here -->
+                            </div>
+                            <input type="text" id="party-input" placeholder="Type a name and press Enter" 
+                                class="input input-bordered w-full mt-2" autocomplete="off">
+                            <!-- Hidden input to submit the values as JSON -->
+                            <input type="hidden" name="request_parties" id="request-parties-hidden">
                         </div>
+
+                        <script>
+                        const partyInput = document.getElementById('party-input');
+                        const partiesContainer = document.getElementById('request-parties-container');
+                        const hiddenInput = document.getElementById('request-parties-hidden');
+                        let parties = [];
+
+                        // Function to update the hidden input for form submission
+                        function updateHiddenInput() {
+                            hiddenInput.value = JSON.stringify(parties); // store as JSON
+                        }
+
+                        // Function to create a chip for a name
+                        function createChip(name) {
+                            const chip = document.createElement('span');
+                            chip.className = 'badge badge-primary flex items-center gap-2';
+                            chip.textContent = name;
+
+                            const removeBtn = document.createElement('button');
+                            removeBtn.type = 'button';
+                            removeBtn.className = 'text-white font-bold';
+                            removeBtn.textContent = '×';
+                            removeBtn.onclick = () => {
+                                parties = parties.filter(p => p !== name);
+                                chip.remove();
+                                updateHiddenInput();
+                            };
+
+                            chip.appendChild(removeBtn);
+                            partiesContainer.appendChild(chip);
+                        }
+
+                        // Add name when Enter is pressed
+                        partyInput.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter' && partyInput.value.trim() !== '') {
+                                e.preventDefault();
+                                const name = partyInput.value.trim();
+
+                                // Avoid duplicates
+                                if (!parties.includes(name)) {
+                                    parties.push(name);
+                                    createChip(name);
+                                    updateHiddenInput();
+                                }
+
+                                partyInput.value = '';
+                            }
+                        });
+
+                        // Optional: Load existing parties if editing
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const existingParties = hiddenInput.value ? JSON.parse(hiddenInput.value) : [];
+                            existingParties.forEach(name => {
+                                parties.push(name);
+                                createChip(name);
+                            });
+                        });
+                        </script>
+
+
 
                         <!-- Purpose & Destination -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -494,7 +567,7 @@
                         </div>
 
                         <!-- Approvers -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {{-- <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="form-control">
                                 <label class="label font-semibold">Recommending Approval</label>
                                 <select name="faculty_id" class="select select-bordered w-full" required>
@@ -518,7 +591,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                        </div>
+                        </div> --}}
 
                         <!-- Action Buttons -->
                         <div class="modal-action">

@@ -70,7 +70,7 @@
                     </svg>
                 </label>
 
-                <!-- Notifications -->
+               <!-- Notifications Dropdown -->
                 <div class="dropdown dropdown-end">
                     <label tabindex="0" class="btn btn-ghost btn-circle">
                         <div class="indicator">
@@ -80,70 +80,70 @@
                             </svg>
 
                             @if($notifications->where('is_read', false)->count() > 0)
-                                <span class="badge badge-xs badge-primary indicator-item">
+                                <span id="notif-count" class="badge badge-xs badge-primary indicator-item absolute top-0 right-0 translate-x-1/2 -translate-y-1/2">
                                     {{ $notifications->where('is_read', false)->count() }}
                                 </span>
                             @endif
                         </div>
                     </label>
 
-                    <div tabindex="0" class="mt-3 z-[1] card card-compact dropdown-content w-80 bg-base-200 shadow">
+                    <div tabindex="0"
+                        class="mt-3 z-[1] card card-compact dropdown-content w-80 bg-base-100 dark:bg-base-200 shadow-lg dark:shadow-none transition">
                         <div class="card-body max-h-80 overflow-y-auto">
-                            <span class="font-bold text-lg">
+                            <span class="font-bold text-lg text-base-content dark:text-base-content/80">
                                 Notifications ({{ $notifications->count() }})
                             </span>
 
                             @forelse($notifications->take(5) as $notification)
-                                <div class="flex justify-between items-start p-2 rounded hover:bg-base-300 transition">
+                                <button type="button"
+                                    onclick="markAsRead({{ $notification->id }}, this)"
+                                    class="flex justify-between items-start w-full p-2 rounded hover:bg-base-200/40 dark:hover:bg-base-300/40 transition text-left">
                                     <div class="flex-1">
-                                        <p class="font-semibold text-sm">{{ $notification->title }}</p>
+                                        <p class="font-semibold text-sm text-base-content dark:text-base-content">{{ $notification->title }}</p>
                                         @if($notification->message)
-                                            <p class="text-xs text-gray-500">{{ $notification->message }}</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $notification->message }}</p>
                                         @endif
                                     </div>
-
-                                    <div class="flex flex-col space-y-1 ml-2">
-                                        @if(!$notification->is_read)
-                                            <form action="{{ route('notifications.read', $notification->id) }}" method="POST">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="text-xs text-blue-500 hover:underline">
-                                                    Mark
-                                                </button>
-                                            </form>
-                                        @endif
-
-                                        <form action="{{ route('notifications.destroy', $notification->id) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-xs text-red-500 hover:underline">
-                                                Delete
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
+                                    @if(!$notification->is_read)
+                                        <span class="badge badge-xs badge-info">New</span>
+                                    @endif
+                                </button>
                             @empty
-                                <p class="text-center text-gray-500 text-sm py-2">No notifications</p>
+                                <p class="text-center text-gray-500 dark:text-gray-400 text-sm py-2">No notifications</p>
                             @endforelse
 
-                            @if($notifications->count() > 0)
-                                <form action="{{ route('notifications.clear') }}" method="POST" class="mt-2">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-error btn-sm btn-block">
-                                        Clear All
+                            <div class="card-actions mt-2 space-y-2">
+                               <!-- Mark All Button -->
+                                {{-- @if($notifications->where('is_read', false)->count() > 0)
+                                    <button type="button" onclick="markAllNotifications()" 
+                                        class="btn btn-sm btn-primary w-full">
+                                        Mark All as Read
                                     </button>
-                                </form>
-                            @endif
+                                @endif --}}
 
-                            <div class="card-actions mt-2">
-                                <a href="{{ route('notifications.index') }}" class="btn btn-primary btn-block btn-sm">
+
+
+                                <!-- Clear All -->
+                                @if($notifications->count() > 0)
+                                    <form action="{{ route('notifications.clear') }}" method="POST" class="w-full">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-success w-full">
+                                            Clear All
+                                        </button>
+                                    </form>
+                                @endif
+
+                                <!-- View All -->
+                                <a href="{{ route('notifications.index') }}" class="btn btn-sm btn-success w-full text-center">
                                     View All
                                 </a>
                             </div>
+
                         </div>
                     </div>
                 </div>
+
 
             </div>
 
@@ -152,7 +152,7 @@
                     <div class="dropdown dropdown-end">
                         <label tabindex="0" class="btn btn-ghost btn-circle avatar">
                             <div class="w-10 rounded-full">
-                                <img alt="{{ Auth::user()->name }}" src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ Auth::user()->email }}" />
+                                <img alt="{{ Auth::user()->sex }}" src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ Auth::user()->email }}" />
                             </div>
                         </label>
                         <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-200 rounded-box w-52">
@@ -314,6 +314,73 @@
             </div>
         </div>
     </div>
+
+    <script>
+function markAllNotifications() {
+    const url = "{{ route('notifications.markAllAsRead') }}"; // route URL
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    fetch(url, {
+        method: "PATCH",
+        headers: {
+            "X-CSRF-TOKEN": token,
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+    })
+    .then(res => {
+        if(!res.ok) throw new Error('Network response was not ok');
+        return res.json();
+    })
+    .then(data => {
+        if(data.success){
+            // Remove all "New" badges
+            document.querySelectorAll('.badge-info').forEach(el => el.remove());
+
+            // Remove bell count
+            const notifCount = document.getElementById('notif-count');
+            if(notifCount) notifCount.remove();
+
+            // Optional: Show a small toast / alert
+            console.log('All notifications marked as read');
+        }
+    })
+    .catch(err => console.error('Error marking all as read:', err));
+}
+</script>
+
+    <script>
+    // Single notification read
+    function markAsRead(id, btn) {
+        fetch(`/notifications/${id}/read-ajax`, {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const badge = btn.querySelector('.badge-info');
+                if (badge) badge.remove();
+
+                const notifCount = document.getElementById('notif-count');
+                if (notifCount) {
+                    let count = parseInt(notifCount.textContent) - 1;
+                    if (count > 0) {
+                        notifCount.textContent = count;
+                    } else {
+                        notifCount.remove();
+                    }
+                }
+            }
+        })
+        .catch(err => console.error(err));
+    }
+    </script>
+
+
 
     
 </body>

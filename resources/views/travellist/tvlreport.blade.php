@@ -70,10 +70,14 @@
     {{-- DETAILS --}}
     <div style="font-size:14px;">
         <div style="margin-top:8px;">
-            <span style="display:inline-block; width:120px;">Applicant</span>
-            <span>
-                @foreach($travel->requestParties as $party)
-                    : {{ $party->name }}<br>
+            <span style="display:inline-block; width:120px; vertical-align: top;">Applicant:</span>
+            <span style="display:inline-block;">
+                @foreach($travel->requestParties as $index => $party)
+                    @if($index === 0)
+                        : {{ $party->name }}<br>
+                    @else
+                        &nbsp;&nbsp;{{ $party->name }}<br>
+                    @endif
                 @endforeach
             </span>
         </div>
