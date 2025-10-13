@@ -14,8 +14,7 @@ use App\Http\Controllers\CEOController;
 use App\Http\Controllers\NotificationController;
 
 Route::get('/', function () {
-    // return view('travellist.request');
-    // return view('travellist.tvlreport');
+    
     return view('auth.login');
 });
 
