@@ -36,14 +36,15 @@ Route::resource('users', UserController::class)->middleware(['auth', 'verified']
 Route::resource('employee', EmployeesController::class)
     ->middleware(['auth', 'verified']);
 
-Route::get('/employees', [EmployeesController::class, 'getEmployees'])
-    ->middleware(['auth', 'verified'])
-    ->name('getEmployees');
-
 // Faculty
 Route::resource('faculties', FacultyController::class);
 
 // Travel List
+
+Route::get('/travellist/history', [TravelListController::class, 'history'])
+    ->name('travellist.history')
+    ->middleware('auth');
+
 Route::resource('travellist', TravelListController::class)->middleware(['auth', 'verified']);
 
 Route::post('/travellist/{id}/supervisor-approve', [TravelListController::class, 'supervisorApprove'])
@@ -53,6 +54,9 @@ Route::post('/travellist/{id}/supervisor-approve', [TravelListController::class,
 Route::post('/travellist/{id}/ceo-approve', [TravelListController::class, 'ceoApprove'])
     ->name('travellist.ceo.approve')
     ->middleware('auth');
+
+
+Route::put('/travellist/{id}/cancel', [TravelListController::class, 'cancel'])->name('travellist.cancel');
 
 // Report Route
 Route::get('/report/{id}/download', [ReportController::class, 'download'])->name('report.download');

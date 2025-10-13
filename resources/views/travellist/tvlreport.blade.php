@@ -1,6 +1,16 @@
 @php
     use Illuminate\Support\Facades\Storage;
 
+     // Define the image paths
+    $footer1Path = public_path('img/footer1.jpg');
+    $footer2Path = public_path('img/footer2.jpg');
+    $footer3Path = public_path('img/footer3.jpg');
+
+    // Convert them to Base64 if they exist
+    $footer1Base64 = file_exists($footer1Path) ? 'data:image/png;base64,' . base64_encode(file_get_contents($footer1Path)) : null;
+    $footer2Base64 = file_exists($footer2Path) ? 'data:image/png;base64,' . base64_encode(file_get_contents($footer2Path)) : null;
+    $footer3Base64 = file_exists($footer3Path) ? 'data:image/png;base64,' . base64_encode(file_get_contents($footer3Path)) : null;
+
     // Inline the CSU logo as base64 so Browsershot doesn't try to fetch it over HTTP
     $logoPath = public_path('img/csulogo.png');
     $logoBase64 = file_exists($logoPath)
@@ -31,7 +41,10 @@
         .justify-between { justify-content: space-between; }
         .items-start { align-items: flex-start; }
         .w-1-3 { width: 33.3333%; }
+
+        
     </style>
+    
 </head>
 <body>
 
@@ -62,7 +75,7 @@
     <div style="text-align:center; position:relative; margin-bottom:10px;">
         <h1 class="font-bold" style="font-size:20px; margin-bottom:10px;">TRAVEL ORDER</h1>
         <div style="position:absolute; right:0; top:0; font-size:14px; text-align:right;">
-            <p style="font-weight:600;">OCEO-TO-{{ \Carbon\Carbon::parse($travel->created_at)->format('Y') }}-{{ str_pad($travel->id, 5, '0', STR_PAD_LEFT) }}</p>
+            <p style="font-weight:600;">{{ $travel->travel_code }}</p>
             <p>Date: {{ \Carbon\Carbon::parse($travel->travel_from)->format('m-d-Y') }}</p>
         </div>
     </div>
@@ -148,6 +161,61 @@
             <p style="font-size:12px;">Office / Agency</p>
         </div>
     </div>
+
+    <style>
+        body {
+            margin-bottom: 90px; /* prevents overlap with fixed footer */
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #ffffff; /* white background */
+            color: #000000;      
+            padding: 12px 0;
+            text-align: center;
+            border-top: 1px solid #e5e7eb; 
+        }
+
+        footer .footer-images {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 24px; /* space between Footer 1 and the group of 2 & 3 */
+        }
+
+        footer .footer-group {
+            display: flex;
+            gap: 1px; /* space between Footer 2 and Footer 3 (closer) */
+        }
+
+        footer img {
+            height: 78px;
+            width: auto;
+        }
+    </style>
+
+    <footer>
+        <div class="footer-images">
+            @if($footer1Base64)
+                <img src="{{ $footer1Base64 }}" alt="Footer Image 1">
+            @endif
+
+            <div class="footer-group">
+                @if($footer2Base64)
+                    <img src="{{ $footer2Base64 }}" alt="Footer Image 2">
+                @endif
+
+                @if($footer3Base64)
+                    <img src="{{ $footer3Base64 }}" alt="Footer Image 3">
+                @endif
+            </div>
+        </div>
+    </footer>
+
+
 
 </body>
 </html>

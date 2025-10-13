@@ -157,6 +157,10 @@
             </table>
         </div>
 
+        <div class="mt-4 flex justify-end">
+            {{ $users->links() }}
+        </div>
+
         <!-- Add User Modal -->
         <input type="checkbox" id="add-user-modal" class="modal-toggle" />
         <div class="modal" onclick="if(event.target === this) document.getElementById('add-user-modal').checked = false;">

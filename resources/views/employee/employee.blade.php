@@ -2,52 +2,66 @@
     <div class="p-6">
         <h1 class="text-2xl font-bold mb-4">Employee Panel</h1>
 
-        <!-- Success Message -->
+        <!-- ✅ Success Message -->
         @if(session('success'))
             <div id="success-alert" class="alert alert-success shadow-lg mb-4">
                 <span>{{ session('success') }}</span>
             </div>
 
             <script>
-                // Wait 3 seconds then fade out
                 setTimeout(() => {
                     const alert = document.getElementById('success-alert');
-                    if(alert) {
+                    if (alert) {
                         alert.style.transition = "opacity 0.5s ease";
                         alert.style.opacity = '0';
-                        // Optional: remove from DOM after fading
                         setTimeout(() => alert.remove(), 500);
                     }
-                }, 3000); // 3000ms = 3 seconds
+                }, 3000);
             </script>
         @endif
 
-        <!-- Search and Filter Section -->
+        <!-- 🔍 Search and Filter Section -->
         <div class="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3">
-            <form action="{{ route('getEmployees') }}" method="GET" class="flex gap-2 flex-wrap w-full sm:w-auto">
+            {{-- ✅ Use the correct route name for index --}}
+            <form action="{{ route('employee.index') }}" method="GET" class="flex gap-2 flex-wrap w-full sm:w-auto">
+                <!-- Search Box -->
                 <div class="form-control w-full sm:w-1/2">
-                    <input type="text" 
+                    <input 
+                        type="text" 
                         name="search" 
                         value="{{ request('search') }}" 
                         placeholder="Search by name..." 
                         class="input input-bordered w-full" />
                 </div>
 
+                <!-- 🏢 Department Filter -->
                 <div class="form-control w-full sm:w-1/5">
-                    <select name="classification" class="select select-bordered w-full" onchange="this.form.submit()">
-                        <option value="All">All</option>
-                        <option value="Admin" {{ request('classification') == 'Admin' ? 'selected' : '' }}>Admin</option>
-                        <option value="Employee" {{ request('classification') == 'Employee' ? 'selected' : '' }}>Employee</option>
-                        <option value="CEO" {{ request('classification') == 'CEO' ? 'selected' : '' }}>CEO</option>
-                        <option value="Supervisor" {{ request('classification') == 'Supervisor' ? 'selected' : '' }}>Supervisor</option>
+                    <select name="department" class="select select-bordered w-full" onchange="this.form.submit()">
+                        <option value="All">All Departments</option>
+                        <option value="CICS" {{ request('department') == 'CICS' ? 'selected' : '' }}>CICS</option>
+                        <option value="CIT" {{ request('department') == 'CIT' ? 'selected' : '' }}>CIT</option>
+                        <option value="CTED" {{ request('department') == 'CTED' ? 'selected' : '' }}>CTED</option>
                     </select>
                 </div>
 
-                <button type="submit" class="btn btn-success"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-icon lucide-search"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg></button>
+                <!-- Search Button -->
+                <button type="submit" class="btn btn-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        width="20" height="20" viewBox="0 0 24 24" 
+                        fill="none" stroke="currentColor" stroke-width="2" 
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m21 21-4.34-4.34"/>
+                        <circle cx="11" cy="11" r="8"/>
+                    </svg>
+                </button>
             </form>
 
-            <label for="add-employee-modal" class="btn btn-success w-full sm:w-auto">+ Add Employee</label>
+            <!-- ➕ Add Employee Button -->
+            <label for="add-employee-modal" class="btn btn-success w-full sm:w-auto">
+                + Add Employee
+            </label>
         </div>
+
 
         <!-- Employees Table -->
         <div class="overflow-x-auto">
@@ -164,6 +178,11 @@
                 </tbody>
             </table>
         </div>
+
+        <div class="mt-4 flex justify-end">
+            {{ $employees->links() }}
+        </div>
+
 
         <!-- Add Employee Modal -->
         <input type="checkbox" id="add-employee-modal" class="modal-toggle" />

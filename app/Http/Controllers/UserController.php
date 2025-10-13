@@ -21,7 +21,7 @@ class UserController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -30,9 +30,12 @@ class UserController extends Controller
             $query->where('role', $request->role);
         }
 
-        $users = $query->get();
+        // 📄 Paginate results (10 per page)
+        $users = $query->orderBy('name')->paginate(5)->appends($request->query());
+
         return view('users.user', compact('users'));
     }
+
 
     public function store(Request $request)
     {

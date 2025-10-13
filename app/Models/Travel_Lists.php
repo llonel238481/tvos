@@ -9,6 +9,7 @@ class Travel_Lists extends Model
     protected $table = 'travel_lists';
 
      protected $fillable = [
+        'travel_code',
         'employee_id', 
         'travel_from',
         'travel_to',

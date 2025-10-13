@@ -123,14 +123,18 @@
                                 @endif
 
                                 @if(auth()->user()->role === 'CEO' && $travel->status === 'Recommended for Approval')
-                                    <button class="btn btn-sm btn-primary w-full sm:w-auto" 
-                                        onclick="document.getElementById('ceo-review-{{ $travel->id }}').showModal()">Review</button>
-                                @endif
+                                    <div class="flex flex-col sm:flex-row gap-2">
+                                        <button class="btn btn-sm btn-primary w-full sm:w-auto"
+                                            onclick="document.getElementById('ceo-review-{{ $travel->id }}').showModal()">
+                                            Review
+                                        </button>
 
-                                @if($travel->status === 'CEO Approved')
-                                    <a href="{{ route('report.download', $travel->id) }}" 
-                                    class="btn btn-sm btn-success w-full sm:w-auto text-center" 
-                                    target="_blank"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-icon lucide-download"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></a>
+                                        <!-- 🟥 Cancel Button -->
+                                        <button class="btn btn-sm btn-error w-full sm:w-auto" 
+                                            onclick="document.getElementById('cancel-travel-{{ $travel->id }}').showModal()">
+                                            Cancel
+                                        </button>
+                                    </div>
                                 @endif
 
                                 @if(auth()->user()->role === 'Admin')
@@ -138,6 +142,12 @@
                                         onclick="document.getElementById('edit-travel-{{ $travel->id }}').showModal()"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen-icon lucide-square-pen"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg></button>
                                     <button class="btn btn-sm btn-error w-full sm:w-auto" 
                                         onclick="document.getElementById('delete-travel-{{ $travel->id }}').showModal()"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash2-icon lucide-trash-2"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                                @endif
+
+                                 @if($travel->status === 'CEO Approved')
+                                    <a href="{{ route('report.download', $travel->id) }}" 
+                                    class="btn btn-sm btn-success w-full sm:w-auto text-center" 
+                                    target="_blank"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-icon lucide-download"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></a>
                                 @endif
                             </td>
                         </tr>
@@ -208,13 +218,20 @@
                                         <div class="p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100 text-center">
                                             <p class="font-semibold text-left mb-3">Recommend Approver:</p>
                                             <p class="underline">{{ $travel->faculty->facultyname ?? 'No Approver' }}</p>
-                                            <p class="font-semibold mt-2 mb-2 text-left">Supervisor Signature</p>
-                                            @if($travel->supervisor_signature)
-                                                <img src="{{ asset('storage/' . $travel->supervisor_signature) }}" 
-                                                    alt="Supervisor Signature" 
-                                                    class="max-h-28 mx-auto border border-base-300 dark:border-base-100">
-                                            @else
-                                                <p class="text-sm text-gray-500 italic">No Supervisor Signature</p>
+
+                                            @php
+                                                $user = Auth::user();
+                                            @endphp
+                                            {{-- 🧾 Supervisor Signature (Visible only for non-Employees) --}}
+                                            @if($user->role !== 'Employee')
+                                                <p class="font-semibold mt-2 mb-2 text-left">Supervisor Signature</p>
+                                                @if($travel->supervisor_signature)
+                                                    <img src="{{ asset('storage/' . $travel->supervisor_signature) }}" 
+                                                        alt="Supervisor Signature" 
+                                                        class="max-h-28 mx-auto border border-base-300 dark:border-base-100 rounded-md">
+                                                @else
+                                                    <p class="text-sm text-gray-500 italic">No Supervisor Signature</p>
+                                                @endif
                                             @endif
                                         </div>
 
@@ -222,13 +239,21 @@
                                         <div class="p-3 bg-base-200 dark:bg-base-300 rounded-lg border border-base-300 dark:border-base-100 text-center">
                                             <p class="font-semibold text-left">CEO: </p>
                                             <p class="underline">{{ $travel->ceo->name ?? 'No CEO Assigned' }}</p>
-                                            <p class="font-semibold mt-2 mb-2 text-left">CEO Signature</p>
-                                            @if($travel->ceo_signature)
-                                                <img src="{{ asset('storage/' . $travel->ceo_signature) }}" 
-                                                    alt="CEO Signature" 
-                                                    class="max-h-28 mx-auto border border-base-300 dark:border-base-100">
-                                            @else
-                                                <p class="text-sm text-gray-500 italic">No CEO Signature</p>
+
+                                            @php
+                                                $user = Auth::user();
+                                            @endphp
+
+                                            {{-- 🖋 CEO Signature (Hidden from Employees) --}}
+                                            @if($user->role !== 'Employee')
+                                                <p class="font-semibold mt-2 mb-2 text-left">CEO Signature</p>
+                                                @if($travel->ceo_signature)
+                                                    <img src="{{ asset('storage/' . $travel->ceo_signature) }}" 
+                                                        alt="CEO Signature" 
+                                                        class="max-h-28 mx-auto border border-base-300 dark:border-base-100 rounded-md">
+                                                @else
+                                                    <p class="text-sm text-gray-500 italic">No CEO Signature</p>
+                                                @endif
                                             @endif
                                         </div>
                                     </div>
@@ -421,6 +446,51 @@
                                 </div>
                             </div>
                         </dialog>
+
+                     <!-- Cancel Modal -->
+                    <dialog id="cancel-travel-{{ $travel->id }}" class="modal">
+                    <div class="modal-box w-full max-w-md">
+                        <!-- Header -->
+                        <h3 class="font-bold text-lg text-error mb-2">Cancel Travel Request</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        Please provide a reason before cancelling. This action cannot be undone.
+                        </p>
+
+                        <!-- Reason Form -->
+                        <form method="POST" action="{{ route('travellist.cancel', $travel->id) }}">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="form-control mb-4">
+                            <label class="label" for="reason-{{ $travel->id }}">
+                            <span class="label-text font-semibold">Reason for Cancellation</span>
+                            </label>
+                            <textarea
+                            name="reason"
+                            id="reason-{{ $travel->id }}"
+                            class="textarea textarea-bordered w-full"
+                            rows="3"
+                            placeholder="Enter reason..."
+                            required
+                            ></textarea>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="modal-action">
+                            <button type="button"
+                            class="btn btn-ghost"
+                            onclick="document.getElementById('cancel-travel-{{ $travel->id }}').close();">
+                            Keep Request
+                            </button>
+
+                            <button type="submit" class="btn btn-error text-white">
+                            Confirm Cancel
+                            </button>
+                        </div>
+                        </form>
+                    </div>
+                    </dialog>
+
                     @empty
                         <tr>
                             <td colspan="9" class="text-center">No travel records found.</td>
@@ -429,6 +499,31 @@
                 </tbody>
             </table>
         </div>
+
+        <script>
+        document.querySelectorAll('[id^="cancel-travel-"]').forEach(modal => {
+            modal.addEventListener('show', () => {
+                modal.querySelector('textarea')?.focus();
+            });
+        });
+        </script>
+
+        <div class="flex justify-end items-center mb-6">
+            <a href="{{ route('travellist.history') }}"
+            class="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm md:text-base transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h4l3 10h8l3-10h4" />
+                </svg>
+                View Travel History
+            </a>
+        </div>
+
+        <!-- 🌿 Pagination -->
+        <div class="mt-4 flex justify-end">
+            {{ $travel_lists->links('pagination::tailwind') }}
+        </div>
+
+       
 
                 {{-- Add Modal --}}
                 <dialog id="add-travel-modal" class="modal">

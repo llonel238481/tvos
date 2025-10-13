@@ -11,12 +11,33 @@ use Illuminate\Support\Str;
 
 class EmployeesController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $employees = Employees::with('department')->get(); // eager load
-        $departments = Department::all(); // fetch departments for dropdowns
-        return view('employee.employee', compact('employees','departments'));
+        $query = Employees::with('department');
+
+        // Optional: add search & filter if you want index() to behave like getEmployees()
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('firstname', 'like', "%{$search}%")
+                ->orWhere('middlename', 'like', "%{$search}%")
+                ->orWhere('lastname', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('department') && $request->department !== 'All') {
+            $query->whereHas('department', function ($q) use ($request) {
+                $q->where('departmentname', $request->department);
+            });
+        }
+
+        // ✅ use paginate() instead of get()
+        $employees = $query->orderBy('lastname')->paginate(10);
+        $departments = Department::all();
+
+        return view('employee.employee', compact('employees', 'departments'));
     }
+
 
     public function show($id)
     {
@@ -115,27 +136,8 @@ class EmployeesController extends Controller
         return redirect()->route('employee.index')->with('success', 'Employee and linked user deleted successfully.');
     }
 
+  
 
-    public function getEmployees(Request $request)
-    {
-        $query = Employees::with('department');
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('firstname', 'like', '%' . $search . '%')
-                  ->orWhere('middlename', 'like', '%' . $search . '%')
-                  ->orWhere('lastname', 'like', '%' . $search . '%');
-            });
-        }
 
-        if ($request->filled('classification') && $request->classification !== 'All') {
-            $query->where('classification', $request->classification);
-        }
-
-        $employees = $query->orderBy('lastname')->paginate(10);
-        $departments = Department::all();
-
-        return view('employee.employee', compact('employees', 'departments'));
-    }
 }
