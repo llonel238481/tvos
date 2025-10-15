@@ -86,11 +86,11 @@
                             <td><input type="checkbox" class="checkbox row-checkbox" /></td>
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $employee->firstname }}</td>
-                            <td>{{ $employee->middlename }}</td>
+                            <td>{{ $employee->middlename ? $employee->middlename : '—' }}</td>
                             <td>{{ $employee->lastname }}</td>
                             <td>{{ $employee->email }}</td>
                             <td>{{ $employee->sex }}</td>
-                            <td>{{ $employee->department->departmentname ?? 'No Department' }}</td>
+                            <td>{{ $employee->department->departmentname ?? '__' }}</td>
                             <td>{{ $employee->extensionname }}</td>
                             <td class="flex gap-2">
                                 <label for="edit-employee-{{ $employee->id }}" class="btn btn-sm btn-primary w-full sm:w-auto"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen-icon lucide-square-pen"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg></label>
@@ -198,7 +198,7 @@
                     </div>
                     <div class="form-control mb-3">
                         <label class="label">Middlename</label>
-                        <input type="text" name="middlename" class="input input-bordered w-full" required />
+                        <input type="text" name="middlename" class="input input-bordered w-full" />
                     </div>
                     <div class="form-control mb-3">
                         <label class="label">Lastname</label>

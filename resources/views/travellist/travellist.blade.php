@@ -41,7 +41,7 @@
                 <button type="submit" class="btn btn-success"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-icon lucide-search"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg></button>
             </form>
 
-            @if(in_array(auth()->user()->role, ['Admin', 'Employee']))
+            @if(in_array(auth()->user()->role, ['Admin', 'Employee', 'Supervisor']))
                 <button class="btn btn-success w-full sm:w-auto" onclick="document.getElementById('add-travel-modal').showModal()">
                     + Request Travel Order
                 </button>
@@ -126,13 +126,13 @@
                                     <div class="flex flex-col sm:flex-row gap-2">
                                         <button class="btn btn-sm btn-primary w-full sm:w-auto"
                                             onclick="document.getElementById('ceo-review-{{ $travel->id }}').showModal()">
-                                            Review
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-search2-icon lucide-folder-search-2"><circle cx="11.5" cy="12.5" r="2.5"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M13.3 14.3 15 16"/></svg>
                                         </button>
 
                                         <!-- 🟥 Cancel Button -->
                                         <button class="btn btn-sm btn-error w-full sm:w-auto" 
                                             onclick="document.getElementById('cancel-travel-{{ $travel->id }}').showModal()">
-                                            Cancel
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x-icon lucide-circle-x"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
                                         </button>
                                     </div>
                                 @endif
@@ -420,11 +420,8 @@
                                     </div>
 
                                     <div class="modal-action">
-                                        <button type="button" class="btn" 
-                                            onclick="document.getElementById('ceo-review-{{ $travel->id }}').close();">
-                                            Cancel
-                                        </button>
-                                        <button type="submit" class="btn btn-success">Approve</button>
+                                    
+                                        <button type="submit" class="btn btn-success"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-badge-check-icon lucide-badge-check"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg></button>
                                     </div>
                                 </form>
                             </div>
@@ -661,32 +658,24 @@
                             </select>
                         </div>
 
-                        <!-- Approvers -->
-                        {{-- <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     @if(
+                        ($employee && is_null($employee->department_id)) || 
+                        (Auth::user()->role === 'Supervisor')
+                    )
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="form-control">
                                 <label class="label font-semibold">Recommending Approval</label>
                                 <select name="faculty_id" class="select select-bordered w-full" required>
-                                    <option value="" selected disabled>Choose Approver</option>
+                                    <option value="" disabled selected>Choose Approver</option>
                                     @foreach($faculties as $faculty)
-                                        <option value="{{ $faculty->id }}" {{ old('faculty_id') == $faculty->id ? 'selected' : '' }}>
-                                            {{ $faculty->facultyname }}
+                                        <option value="{{ $faculty->id }}">
+                                            {{ $faculty->facultyname ?? $faculty->name ?? $faculty->full_name }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
-
-                            <div class="form-control">
-                                <label class="label font-semibold">CEO</label>
-                                <select name="ceo_id" class="select select-bordered w-full">
-                                    <option value="" selected disabled>Choose CEO</option>
-                                    @foreach($ceos as $ceo)
-                                        <option value="{{ $ceo->id }}" {{ old('ceo_id') == $ceo->id ? 'selected' : '' }}>
-                                            {{ $ceo->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div> --}}
+                        </div>
+                    @endif
 
                         <!-- Action Buttons -->
                         <div class="modal-action">
@@ -696,8 +685,6 @@
                     </form>
                 </div>
             </dialog>
-
-
 
     </div>
 

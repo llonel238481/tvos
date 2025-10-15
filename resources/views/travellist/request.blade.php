@@ -41,7 +41,7 @@
             </div>
 
             <div class="w-1/4 flex justify-end">
-                {{-- Right logo optional --}}
+                 <img src="{{ public_path('img/lasamlogo.png') }}" alt="Right Logo" class="h-10 w-auto">
             </div>
         </header>
 
@@ -84,7 +84,7 @@
             <p class="font-semibold">Recommending Approval:</p>
             <div class=" flex justify-end">
                 @if($travel->faculty && $travel->faculty->signature && file_exists(storage_path('app/public/'.$travel->faculty->signature)))
-                    <img src="{{ storage_path('app/public/'.$travel->faculty->signature) }}" alt="Supervisor Signature" class="h-16 mb-1 mr-8">
+                    <img src="{{ storage_path('app/public/'.$travel->faculty->signature) }}" alt="Faculty Signature" class="h-16 mb-1 mr-8">
                 @endif
             </div>
             <p class="underline text-right mr-8">{{ $travel->faculty->facultyname ?? 'Immediate Supervisor' }}</p>

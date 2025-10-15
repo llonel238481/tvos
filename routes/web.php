@@ -12,6 +12,7 @@ use App\Http\Controllers\TransportationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CEOController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ImmediateSupervisorController;
 
 Route::get('/', function () {
     
@@ -108,6 +109,8 @@ Route::middleware(['auth'])->group(function () {
 
 Route::patch('/notifications/{id}/read-ajax', [NotificationController::class, 'markAsReadAjax'])
     ->name('notifications.read.ajax');
+
+
 
 
 require __DIR__.'/auth.php';

@@ -34,7 +34,4 @@ class Employees extends Model
     {
         return $this->hasMany(Travel_Lists::class);
     }
-
-
-
 }

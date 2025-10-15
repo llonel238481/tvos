@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class="p-6">
-        <h1 class="text-2xl font-bold mb-4">Faculty Panel</h1>
+        <h1 class="text-2xl font-bold mb-4">Immediate Supervisor Panel</h1>
 
         {{-- Success Message --}}
         @if(session('success'))
@@ -48,7 +48,7 @@
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search faculty..." class="input input-bordered w-full sm:w-64" />
                 <button type="submit" class="btn btn-success"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-icon lucide-search"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg></button>
             </form>
-            <label for="add-faculty-modal" class="btn btn-success w-full sm:w-auto">+ Add Faculty</label>
+            <label for="add-faculty-modal" class="btn btn-success w-full sm:w-auto">+ Add Supervisor</label>
         </div>
 
         {{-- Faculty Table --}}
@@ -58,7 +58,7 @@
                     <tr>
                         <th><input type="checkbox" id="select-all" class="checkbox" /></th>
                         <th>#</th>
-                        <th>Faculty Name</th>
+                        <th>Name</th>
                         <th>Email</th>
                         <th>Contact</th>
                         <th>Department</th>
@@ -74,7 +74,7 @@
                             <td>{{ $faculty->facultyname }}</td>
                             <td>{{ $faculty->email }}</td>
                             <td>{{ $faculty->contact }}</td>
-                            <td>{{ $faculty->department->departmentname ?? 'No Department' }}</td>
+                            <td>{{ $faculty->department->departmentname ?? '__' }}</td>
                             <td>
                                 @if($faculty->signature)
                                     <img src="{{ asset('storage/' . $faculty->signature) }}" alt="Signature" class="w-24 h-auto">
@@ -158,7 +158,7 @@
                         </div>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center">No faculty found.</td>
+                            <td colspan="8" class="text-center">No supervisor found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -170,7 +170,7 @@
         <div class="modal" onclick="if(event.target === this) document.getElementById('add-faculty-modal').checked = false;">
             <div class="modal-box relative">
                 <label for="add-faculty-modal" class="btn btn-sm btn-circle absolute right-2 top-2">✕</label>
-                <h3 class="font-bold text-lg mb-4">Add Faculty</h3>
+                <h3 class="font-bold text-lg mb-4">Add Dean</h3>
                 <form action="{{ route('faculties.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 

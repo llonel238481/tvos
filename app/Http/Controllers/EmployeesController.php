@@ -15,29 +15,34 @@ class EmployeesController extends Controller
     {
         $query = Employees::with('department');
 
-        // Optional: add search & filter if you want index() to behave like getEmployees()
+        // Search by name
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('firstname', 'like', "%{$search}%")
-                ->orWhere('middlename', 'like', "%{$search}%")
-                ->orWhere('lastname', 'like', "%{$search}%");
+                  ->orWhere('middlename', 'like', "%{$search}%")
+                  ->orWhere('lastname', 'like', "%{$search}%");
             });
         }
 
+        // Department filter including "No Department"
         if ($request->filled('department') && $request->department !== 'All') {
-            $query->whereHas('department', function ($q) use ($request) {
-                $q->where('departmentname', $request->department);
-            });
+            if ($request->department === 'No Department') {
+                $query->whereNull('department_id');
+            } else {
+                $query->whereHas('department', function ($q) use ($request) {
+                    $q->where('departmentname', $request->department);
+                });
+            }
         }
 
-        // ✅ use paginate() instead of get()
-        $employees = $query->orderBy('lastname')->paginate(10);
+        // Paginate results
+        $employees = $query->orderBy('lastname')->paginate(10)->withQueryString();
+
         $departments = Department::all();
 
         return view('employee.employee', compact('employees', 'departments'));
     }
-
 
     public function show($id)
     {
@@ -47,47 +52,45 @@ class EmployeesController extends Controller
 
     public function create()
     {
-        return view('employee.create');
+        $departments = Department::all();
+        return view('employee.create', compact('departments'));
     }
 
-   public function store(Request $request)
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'firstname' => 'required|string|max:255',
-            'middlename' => 'required|string|max:255',
+            'middlename' => 'nullable|string|max:255',
             'lastname' => 'required|string|max:255',
             'extensionname' => 'nullable|string|max:10',
-            'department_id' => 'required|exists:departments,id',
+            'department_id' => 'nullable|exists:departments,id', // allow null
             'sex' => 'required|in:Male,Female',
-            'email' => 'required|email|unique:users,email', // ✅
+            'email' => 'required|email|unique:users,email',
         ]);
 
-        // 🧠 Generate full name
-        $middleInitial = !empty($validated['middlename']) ? strtoupper($validated['middlename'][0]) . '.' : '';
-        $fullName = "{$validated['firstname']} {$middleInitial} {$validated['lastname']}";
+        $middlename = $validated['middlename'] ?? '';
+        $middleInitial = $middlename ? strtoupper($middlename[0]) . '.' : '';
+        $fullName = trim("{$validated['firstname']} {$middleInitial} {$validated['lastname']}");
 
-        // 🧠 Create linked User
         $user = User::create([
             'name' => $fullName,
             'email' => $validated['email'],
-            'role' => 'Employee', // default role
+            'role' => 'Employee',
             'password' => Hash::make('password123'),
             'email_verified_at' => now(),
             'remember_token' => Str::random(60),
         ]);
 
-        // 🧠 Create the employee record & link user_id
         $validated['user_id'] = $user->id;
         Employees::create($validated);
 
         return redirect()->route('employee.index')->with('success', 'Employee created successfully.');
     }
 
-
     public function edit($id)
     {
         $employee = Employees::findOrFail($id);
-        $departments = Department::all(); // ✅ Added for dropdown
+        $departments = Department::all();
         return view('employee.edit', compact('employee', 'departments'));
     }
 
@@ -97,21 +100,23 @@ class EmployeesController extends Controller
 
         $validated = $request->validate([
             'firstname' => 'required|string|max:255',
-            'middlename' => 'required|string|max:255',
+            'middlename' => 'nullable|string|max:255',
             'lastname' => 'required|string|max:255',
             'extensionname' => 'nullable|string|max:10',
-            'department_id' => 'required|exists:departments,id',
+            'department_id' => 'nullable|exists:departments,id', // allow null
             'sex' => 'required|in:Male,Female',
-            'email' => 'required|email|unique:users,email,' . $employee->user_id, // ✅ use user_id for exception
+            'email' => 'required|email|unique:users,email,' . $employee->user_id,
         ]);
 
         $employee->update($validated);
 
-        // 🧠 Update linked User
         if ($employee->user_id) {
             $user = User::find($employee->user_id);
             if ($user) {
-                $fullName = "{$validated['firstname']} {$validated['middlename']} {$validated['lastname']}";
+                $middlename = $validated['middlename'] ?? '';
+                $middleInitial = $middlename ? strtoupper($middlename[0]) . '.' : '';
+                $fullName = trim("{$validated['firstname']} {$middleInitial} {$validated['lastname']}");
+
                 $user->update([
                     'name' => $fullName,
                     'email' => $validated['email'],
@@ -121,7 +126,6 @@ class EmployeesController extends Controller
 
         return redirect()->route('employee.index')->with('success', 'Employee updated successfully.');
     }
-
 
     public function destroy($id)
     {
@@ -135,9 +139,4 @@ class EmployeesController extends Controller
 
         return redirect()->route('employee.index')->with('success', 'Employee and linked user deleted successfully.');
     }
-
-  
-
-
-
 }
